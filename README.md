@@ -3,7 +3,7 @@ My homelab documentation. Network/System diagrams, configuration files, applicat
 
 --------------------
 
-## Services:
+## Services
 
 - Samba DC
 - DNS Server
