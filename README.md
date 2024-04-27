@@ -16,3 +16,16 @@ Services:
 - DynDNS
 - PVE (Proxmox on my Dell R620)
 - Raspberry Pi 3b+ Kubernetes Cluster, where most of these services are hosted.
+
+
+## L1 Diagram
+
+--------------------
+
+## L2 Diagram
+
+--------------------
+
+## Addressing Plan
+
+-------------------
