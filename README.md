@@ -9,7 +9,7 @@ My homelab documentation. Network/System diagrams, configuration files, applicat
 - DNS Server
 - NTP Server
 - DHCP Server
-- MDADM USB Array on a Raspberry Pi + NFS/SMB Share
+- MDADM USB Array on a Raspberry Pi as an NFS/SMB share
 - Prometheus/Grafana
 - qBitTorrent
 - *rr suite (Prowlarr, Lidarr, Sonarr, Radarr)
