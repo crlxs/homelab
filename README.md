@@ -2,7 +2,9 @@
 My homelab documentation. Network/System diagrams, configuration files, applications, scripts and else.
 
 --------------------
-Services:
+
+## Services:
+
 - Samba DC
 - DNS Server
 - NTP Server
