@@ -38,3 +38,9 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 | ??? | N/A  | 192.168.1.0/24 |         | 192.168.1.1 | ??? | 192.168.1.1 | .150-200   | .1-100             |
 
 --------------------
+
+## Other
+
+### Security concerns (?)
+
+- Yes, sharing my internal network in such detail goes against all and any security practices. That being said, I'm realistical a target to no one, and if I am, your welcome to try.
