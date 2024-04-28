@@ -34,5 +34,6 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 ## Addressing Plan
 
 | Networks |
+| -------- |
 
 --------------------
