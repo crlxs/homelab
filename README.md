@@ -33,7 +33,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## Addressing Plan
 
-| NET | VLAN | CIDR | N Hosts | GW | DNS | DHCP | DHCP Range | Reserved IPs Range |
-| --- | ---- | ---- | ------- | -- | --- | ---- | ---------- | ------------------ | 
+| NET | VLAN | CIDR           | N Hosts | GW          | DNS | DHCP        | DHCP Range | Reserved IPs Range |
+| :-- | :--- | :------------- | :------ | :---------- | :-- | :---------- | :--------- | :----------------- |
+| ??? | N/A  | 192.168.1.0/24 |         | 192.168.1.1 | ??? | 192.168.1.1 | .150-200   | .1-100             |
 
 --------------------
