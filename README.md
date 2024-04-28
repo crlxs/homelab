@@ -43,4 +43,4 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Security concerns (?)
 
-- Yes, sharing my internal network in such detail goes against all and any security practices. That being said, I'm realistical a target to no one, and if I am, your welcome to try.
+- Yes, sharing my internal network in such detail goes against all and any security practices. That being said, I'm realistically a target to no one, and if I am, your welcome to try.
