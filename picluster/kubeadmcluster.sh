@@ -11,9 +11,14 @@ sudo apt update -y
 sudo apt upgrade -y
 
 # Disable swap
-# For raspbian 'sudo dphys-swapfile swapoff'. THIS IS NOT PERMANENT, NEED TO EDIT /etc/dphys-swapfile?
 sudo swapoff -a
 sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+# For raspbian 'sudo dphys-swapfile swapoff'. To make it permanent:
+sudo dphys-swapfile swapoff
+sudo dphys-swapfile uninstall
+sudo update-rc.d dhpys-swapfile remove
+sudo apt purge dphys-swapfile -y
 
 # For raspbian, enable memory cgroup
 # Add cgroup_enable=memory AND cgroup_memory=1 in /boot/firmware/cmdline.txt
