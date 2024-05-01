@@ -11,8 +11,8 @@ sudo apt update -y
 sudo apt upgrade -y
 
 # Disable swap
-sudo swapoff -a
-sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+# sudo swapoff -a
+# sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
 # For raspbian 'sudo dphys-swapfile swapoff'. To make it permanent:
 sudo dphys-swapfile swapoff
