@@ -19,6 +19,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - PVE (Proxmox on my Dell R620)
 - Raspberry Pi 3b+ Kubernetes Cluster, where most of these services are hosted.
 
+*To add service matrix(table)
 -------------------
 
 ## L1 Diagram
