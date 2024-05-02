@@ -45,6 +45,10 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## Other
 
+#### Why use a git repository
+
+I have tried different ways of documenting my homelab environment (simple .txt files, docs, spreadsheets). The simplicity of a git repo and having everything condensed on a README.md is really convenient, easy to access, modify, track and share.
+
 #### Security concerns (?)
 
 - Yes, sharing my internal network in such detail goes against all and any security practices. That being said, I'm realistically a target to no one, and if I am, your welcome to try.
