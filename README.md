@@ -1,4 +1,4 @@
-# 💾 Homelab 
+# 🖥 Homelab 
 My homelab documentation. Network/System diagrams, configuration files, apps, scripts and else.
 
 --------------------
