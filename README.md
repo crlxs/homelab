@@ -16,7 +16,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - Torrent-exclusive VPN
 - Wireguard VPN for outside access
 - DynDNS
-- PVE (Proxmox on my Dell R620)
+- PVE (Proxmox Virtual Environment on my Dell R620)
 - Raspberry Pi 3b+ Kubernetes Cluster, where most of these services are hosted.
 
 - *To add service matrix(table)*
