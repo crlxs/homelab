@@ -47,8 +47,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Hosts
 
-| HOSTS |
-| :---- |
+| DEVICE | HOSTNAME | NIC | MAC | IP  | CONNECTED TO | 
+| :----: | :------: | :-: | :-: | :-: | :----------: |
 
 --------------------
 
