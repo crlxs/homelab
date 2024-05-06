@@ -35,6 +35,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## Addressing Plan
 
+### Networks
+
 | NET | VLAN | CIDR           | GW           | DNS | DHCP         | DHCP Range       | Static IPs Range |
 | :-- | :--- | :------------- | :----------- | :-- | :----------- | :--------------- | :--------------- |
 | ??? | N/A  | 192.168.1.0/24 | 192.168.1.1  | ??? | 192.168.1.1  | .151 - .200      | .1 - .150        |
@@ -43,11 +45,11 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 | :-- | :--- | :------------- | :----------- | :-- | :----------  | :--------------- | :--------------- |
 | ??? | N/A  | 172.17.0.0/16  | 172.17.0.254 | ??? | 172.17.0.254 | .69.0 - .69.255  | .0.1 - .10.255   |
 
+### Hosts
+
 | HOSTS |
 | :---- |
-| NET | VLAN | CIDR           | GW           | DNS | DHCP         | DHCP Range       | Static IPs Range |
-| :-- | :--- | :------------- | :----------- | :-- | :----------  | :--------------- | :--------------- |
-| ??? | N/A  | 172.17.0.0/16  | 172.17.0.254 | ??? | 172.17.0.254 | .69.0 - .69.255  | .0.1 - .10.255   |
+
 --------------------
 
 ## Other
