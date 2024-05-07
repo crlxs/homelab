@@ -25,6 +25,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## L1 Diagram
 
+![L1Diagram](diagrams/L1Diagram.jpg)
+
 --------------------
 
 ## L3 Diagram
