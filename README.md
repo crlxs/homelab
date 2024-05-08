@@ -46,9 +46,12 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Hosts
 
-| DEVICE              | HOSTNAME | NIC | MAC | IP  | CONNECTED TO | 
-| :-----------------: | :------: | :-: | :-: | :-: | :----------: |
-| Raspberry Pi 5 8 GB | piw      |     |     |     |              |
+| HOSTNAME | DEVICE              | NIC | MAC | IP  | CONNECTED TO | 
+| :------: | :-----------------: | :-: | :-: | :-: | :----------: |
+| piw      | Raspberry Pi 5 8GB  |     |     |     |              |
+| pix      | Raspberry Pi 3 B+   |     |     |     |              |
+| piy      | Raspberry Pi 3 B+   |     |     |     |              |
+| piz      | Raspberry Pi 3 B+   |     |     |     |              |
 
 
 --------------------
