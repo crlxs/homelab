@@ -46,7 +46,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Hosts
 
-|| HOSTNAME | DEVICE                | NIC | MAC | IP            | CONNECTED TO | 
+| HOSTNAME  | DEVICE                | NIC | MAC | IP            | CONNECTED TO | 
 | :-------: | :-------------------: | :-: | :-: | :-----------: | :----------: |
 | pix(pi1)  | Raspberry Pi 3 B+     |     |     | 172.17.0.1    | gs1920 PX    |
 | piy(pi2)  | Raspberry Pi 3 B+     |     |     | 172.17.0.2    | gs1920 PX    |
