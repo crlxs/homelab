@@ -53,9 +53,9 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 | piz(pi3)  | Raspberry Pi 3 B+     |     |     | 172.17.0.3    | gs1920 PX    |
 | piw(pi4)  | Raspberry Pi 5 8GB    |     |     | 172.17.0.4    | gs1920 PX    |
 | z10       | My Workstation        |     |     | 172.17.0.10   | gs1920 PX    |
-| erx       | UbiQuiti EdgeRouter X |     |     |               |              |
-| r620      | Dell PowerEdge R620   |     |     | 172.17.0.100  |              |
-| gs1920    | ZyXEL GS1920-24       |     |     | 172.17.0.253  |              |
+| erx       | UbiQuiti EdgeRouter X |     |     | XX            | XX           |
+| r620      | Dell PowerEdge R620   |     |     | 172.17.0.100  | XX           |
+| gs1920    | ZyXEL GS1920-24       |     |     | 172.17.0.253  | XX           |
 
 --------------------
 
