@@ -46,16 +46,16 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Hosts
 
-| HOSTNAME | DEVICE                | NIC | MAC | IP  | CONNECTED TO | 
-| :------: | :-------------------: | :-: | :-: | :-: | :----------: |
-| pix      | Raspberry Pi 3 B+     |     |     |     |              |
-| piy      | Raspberry Pi 3 B+     |     |     |     |              |
-| piz      | Raspberry Pi 3 B+     |     |     |     |              |
-| piw      | Raspberry Pi 5 8GB    |     |     |     |              |
-| z10      | My Workstation        |     |     |     |              |
-| erx      | UbiQuiti EdgeRouter X |     |     |     |              |
-| r620     | Dell PowerEdge R620   |     |     |     |              |
-| gs1920   | ZyXEL GS1920-24       |     |     |     |              |
+|| HOSTNAME | DEVICE                | NIC | MAC | IP            | CONNECTED TO | 
+| :-------: | :-------------------: | :-: | :-: | :-----------: | :----------: |
+| pix(pi1)  | Raspberry Pi 3 B+     |     |     | 172.17.0.1    | gs1920 PX    |
+| piy(pi2)  | Raspberry Pi 3 B+     |     |     | 172.17.0.2    | gs1920 PX    |
+| piz(pi3)  | Raspberry Pi 3 B+     |     |     | 172.17.0.3    | gs1920 PX    |
+| piw(pi4)  | Raspberry Pi 5 8GB    |     |     | 172.17.0.4    | gs1920 PX    |
+| z10       | My Workstation        |     |     | 172.17.0.10   | gs1920 PX    |
+| erx       | UbiQuiti EdgeRouter X |     |     |               |              |
+| r620      | Dell PowerEdge R620   |     |     | 172.17.0.100  |              |
+| gs1920    | ZyXEL GS1920-24       |     |     | 172.17.0.253  |              |
 
 --------------------
 
