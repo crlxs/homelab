@@ -46,13 +46,16 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Hosts
 
-| HOSTNAME | DEVICE              | NIC | MAC | IP  | CONNECTED TO | 
-| :------: | :-----------------: | :-: | :-: | :-: | :----------: |
-| piw      | Raspberry Pi 5 8GB  |     |     |     |              |
-| pix      | Raspberry Pi 3 B+   |     |     |     |              |
-| piy      | Raspberry Pi 3 B+   |     |     |     |              |
-| piz      | Raspberry Pi 3 B+   |     |     |     |              |
-
+| HOSTNAME | DEVICE                | NIC | MAC | IP  | CONNECTED TO | 
+| :------: | :-------------------: | :-: | :-: | :-: | :----------: |
+| pix      | Raspberry Pi 3 B+     |     |     |     |              |
+| piy      | Raspberry Pi 3 B+     |     |     |     |              |
+| piz      | Raspberry Pi 3 B+     |     |     |     |              |
+| piw      | Raspberry Pi 5 8GB    |     |     |     |              |
+| z10      | My Workstation        |     |     |     |              |
+| erx      | UbiQuiti EdgeRouter X |     |     |     |              |
+| r620     | Dell PowerEdge R620   |     |     |     |              |
+| gs1920   | ZyXEL GS1920-24       |     |     |     |              |
 
 --------------------
 
