@@ -96,21 +96,21 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>pix(pi1)</td>
       <td rowspan="3">Raspberry Pi 3 B+</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.1</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>piy(pi2)</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.2</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>piz(pi3)</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.3</td>
       <td>gs1920 PX</td>
     </tr>
@@ -118,7 +118,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>piw(pi4)</td>
       <td>Raspberry Pi 5 8GB</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.4</td>
       <td>gs1920 PX</td>
     </tr>
@@ -126,7 +126,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>z10</td>
       <td>My Workstation</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.10</td>
       <td>gs1920 PX</td>
     </tr>
@@ -134,7 +134,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>erx</td>
       <td>UbiQuiti EdgeRouter X</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>XX</td>
       <td>XX</td>
     </tr>
@@ -142,7 +142,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>r620</td>
       <td>Dell PowerEdge R620</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.100</td>
       <td>XX</td>
     </tr>
