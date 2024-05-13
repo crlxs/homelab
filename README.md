@@ -92,64 +92,132 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
   </thead>
   <tbody>
+    <!-- PIX -->
     <tr>
       <td>pix(pi1)</td>
       <td rowspan="3">Raspberry Pi 3 B+</td>
-      <td></td>
+      <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.1</td>
       <td>gs1920 PX</td>
     </tr>
+    <!-- PIY -->
     <tr>
       <td>piy(pi2)</td>
-      <td></td>
+      <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.2</td>
       <td>gs1920 PX</td>
     </tr>
+    <!-- PIZ -->
     <tr>
       <td>piz(pi3)</td>
-      <td></td>
+      <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.3</td>
       <td>gs1920 PX</td>
     </tr>
+    <!-- PIW -->
     <tr>
       <td>piw(pi4)</td>
       <td>Raspberry Pi 5 8GB</td>
-      <td></td>
+      <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.4</td>
       <td>gs1920 PX</td>
     </tr>
+    <!-- Z10 -->
     <tr>
-      <td>z10</td>
-      <td>My Workstation</td>
-      <td></td>
+      <td rowspan="3">z10</td>
+      <td rowspan="3">My Workstation</td>
+      <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.10</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
-      <td>erx</td>
-      <td>UbiQuiti EdgeRouter X</td>
-      <td></td>
-      <td>00-00-00-00-00-00</td>
-      <td>XX</td>
-      <td>XX</td>
+      <td>NIC2</td>
+      <td>00-00-00-00-00-04</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
     </tr>
     <tr>
-      <td>r620</td>
-      <td>Dell PowerEdge R620</td>
-      <td></td>
+      <td>NIC3</td>
+      <td>00-00-00-00-00-04</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <!-- ERX -->
+    <tr>
+      <td rowspan="5">erx</td>
+      <td rowspan="5">UbiQuiti EdgeRouter X</td>
+      <td>NIC1</td>
+      <td>00-00-00-00-00-03</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>NIC2</td>
+      <td>00-00-00-00-00-04</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>NIC3</td>
+      <td>00-00-00-00-00-05</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>NIC4</td>
+      <td>00-00-00-00-00-05</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>NIC5</td>
+      <td>00-00-00-00-00-05</td>
+      <td>X</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <!-- R620 -->
+    <tr>
+      <td rowspan="5">r620</td>
+      <td rowspan="5">Dell PowerEdge R620</td>
+      <td>NIC1</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.100</td>
       <td>XX</td>
     </tr>
     <tr>
+      <td>NIC2</td>
+      <td>00-00-00-00-00-04</td>
+      <td>X</td>
+      <td>XX</td>
+    </tr>
+    <tr>
+      <td>NIC3</td>
+      <td>00-00-00-00-00-05</td>
+      <td>X</td>
+      <td>XX</td>
+    </tr>
+    <tr>
+      <td>NIC4</td>
+      <td>00-00-00-00-00-05</td>
+      <td>X</td>
+      <td>XX</td>
+    </tr>
+    <tr>
+      <td>NIC5</td>
+      <td>00-00-00-00-00-05</td>
+      <td>X</td>
+      <td>XX</td>
+    </tr>
+    <!-- GS1920 -->
+    <tr>
       <td>gs1920</td>
       <td>ZyXEL GS1920-24</td>
-      <td></td>
+      <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>172.17.0.253</td>
       <td>XX</td>
