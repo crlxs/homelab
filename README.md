@@ -95,7 +95,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
   <tbody>
     <!-- PIX -->
     <tr>
-      <td>pix(pi1)</td>
+      <td>pix</td>
       <td rowspan="3">Raspberry Pi 3 B+</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
@@ -105,7 +105,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
     <!-- PIY -->
     <tr>
-      <td>piy(pi2)</td>
+      <td>piy</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
@@ -114,7 +114,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
     <!-- PIZ -->
     <tr>
-      <td>piz(pi3)</td>
+      <td>piz</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
@@ -123,7 +123,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
     <!-- PIW -->
     <tr>
-      <td>piw(pi4)</td>
+      <td>piw</td>
       <td>Raspberry Pi 5 8GB</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
@@ -159,35 +159,35 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     <tr>
       <td rowspan="5">erx</td>
       <td rowspan="5">UbiQuiti EdgeRouter X</td>
-      <td>NIC1</td>
+      <td>ETH0</td>
       <td>00-00-00-00-00-03</td>
       <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
-      <td>NIC2</td>
+      <td>ETH1</td>
       <td>00-00-00-00-00-04</td>
       <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
-      <td>NIC3</td>
+      <td>ETH2</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
-      <td>NIC4</td>
+      <td>ETH3</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
-      <td>NIC5</td>
+      <td>ETH4</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
       <td>X</td>
