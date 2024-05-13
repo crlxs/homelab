@@ -77,9 +77,9 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
   </tbody>
 </table>
 
-
 ### Hosts
 
+<details>
 <table>
   <thead>
     <tr>
@@ -273,6 +273,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
   </tbody>
 </table>
+</details>
 
 --------------------
 
