@@ -94,63 +94,70 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
   <tbody>
     <tr>
       <td>pix(pi1)</td>
-      <td colspan="2">Raspberry Pi 3 B+</td>
+      <td>Raspberry Pi 3 B+</td>
+      <td></td>
       <td></td>
       <td>172.17.0.1</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>piy(pi2)</td>
-      <td colspan="2">Raspberry Pi 3 B+</td>
+      <td>Raspberry Pi 3 B+</td>
+      <td></td>
       <td></td>
       <td>172.17.0.2</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>piz(pi3)</td>
-      <td colspan="2">Raspberry Pi 3 B+</td>
+      <td>Raspberry Pi 3 B+</td>
+      <td></td>
       <td></td>
       <td>172.17.0.3</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>piw(pi4)</td>
-      <td colspan="2">Raspberry Pi 5 8GB</td>
+      <td>Raspberry Pi 5 8GB</td>
+      <td></td>
       <td></td>
       <td>172.17.0.4</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>z10</td>
-      <td colspan="2">My Workstation</td>
+      <td>My Workstation</td>
+      <td></td>
       <td></td>
       <td>172.17.0.10</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>erx</td>
-      <td colspan="2">UbiQuiti EdgeRouter X</td>
+      <td>UbiQuiti EdgeRouter X</td>
+      <td></td>
       <td></td>
       <td>XX</td>
       <td>XX</td>
     </tr>
     <tr>
       <td>r620</td>
-      <td colspan="2">Dell PowerEdge R620</td>
+      <td>Dell PowerEdge R620</td>
+      <td></td>
       <td></td>
       <td>172.17.0.100</td>
       <td>XX</td>
     </tr>
     <tr>
       <td>gs1920</td>
-      <td colspan="2">ZyXEL GS1920-24</td>
+      <td>ZyXEL GS1920-24</td>
+      <td></td>
       <td></td>
       <td>172.17.0.253</td>
       <td>XX</td>
     </tr>
   </tbody>
 </table>
-
 
 --------------------
 
