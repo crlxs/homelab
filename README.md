@@ -94,7 +94,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
   <tbody>
     <tr>
       <td>pix(pi1)</td>
-      <td>Raspberry Pi 3 B+</td>
+      <td rowspan="3">Raspberry Pi 3 B+</td>
       <td></td>
       <td></td>
       <td>172.17.0.1</td>
@@ -102,7 +102,6 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
     <tr>
       <td>piy(pi2)</td>
-      <td>Raspberry Pi 3 B+</td>
       <td></td>
       <td></td>
       <td>172.17.0.2</td>
@@ -110,7 +109,6 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
     <tr>
       <td>piz(pi3)</td>
-      <td>Raspberry Pi 3 B+</td>
       <td></td>
       <td></td>
       <td>172.17.0.3</td>
