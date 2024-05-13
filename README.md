@@ -150,7 +150,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>gs1920</td>
       <td>ZyXEL GS1920-24</td>
       <td></td>
-      <td></td>
+      <td>00-00-00-00-00-00</td>
       <td>172.17.0.253</td>
       <td>XX</td>
     </tr>
