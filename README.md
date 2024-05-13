@@ -80,16 +80,77 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Hosts
 
-| HOSTNAME  | DEVICE                | NIC | MAC | IP            | CONNECTED TO | 
-| :-------: | :-------------------: | :-: | :-: | :-----------: | :----------: |
-| pix(pi1)  | Raspberry Pi 3 B+     |     |     | 172.17.0.1    | gs1920 PX    |
-| piy(pi2)  | Raspberry Pi 3 B+     |     |     | 172.17.0.2    | gs1920 PX    |
-| piz(pi3)  | Raspberry Pi 3 B+     |     |     | 172.17.0.3    | gs1920 PX    |
-| piw(pi4)  | Raspberry Pi 5 8GB    |     |     | 172.17.0.4    | gs1920 PX    |
-| z10       | My Workstation        |     |     | 172.17.0.10   | gs1920 PX    |
-| erx       | UbiQuiti EdgeRouter X |     |     | XX            | XX           |
-| r620      | Dell PowerEdge R620   |     |     | 172.17.0.100  | XX           |
-| gs1920    | ZyXEL GS1920-24       |     |     | 172.17.0.253  | XX           |
+<table>
+  <thead>
+    <tr>
+      <th>HOSTNAME</th>
+      <th>DEVICE</th>
+      <th>NIC</th>
+      <th>MAC</th>
+      <th>IP</th>
+      <th>CONNECTED TO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>pix(pi1)</td>
+      <td colspan="2">Raspberry Pi 3 B+</td>
+      <td></td>
+      <td>172.17.0.1</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>piy(pi2)</td>
+      <td colspan="2">Raspberry Pi 3 B+</td>
+      <td></td>
+      <td>172.17.0.2</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>piz(pi3)</td>
+      <td colspan="2">Raspberry Pi 3 B+</td>
+      <td></td>
+      <td>172.17.0.3</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>piw(pi4)</td>
+      <td colspan="2">Raspberry Pi 5 8GB</td>
+      <td></td>
+      <td>172.17.0.4</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>z10</td>
+      <td colspan="2">My Workstation</td>
+      <td></td>
+      <td>172.17.0.10</td>
+      <td>gs1920 PX</td>
+    </tr>
+    <tr>
+      <td>erx</td>
+      <td colspan="2">UbiQuiti EdgeRouter X</td>
+      <td></td>
+      <td>XX</td>
+      <td>XX</td>
+    </tr>
+    <tr>
+      <td>r620</td>
+      <td colspan="2">Dell PowerEdge R620</td>
+      <td></td>
+      <td>172.17.0.100</td>
+      <td>XX</td>
+    </tr>
+    <tr>
+      <td>gs1920</td>
+      <td colspan="2">ZyXEL GS1920-24</td>
+      <td></td>
+      <td>172.17.0.253</td>
+      <td>XX</td>
+    </tr>
+  </tbody>
+</table>
+
 
 --------------------
 
