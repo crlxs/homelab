@@ -87,6 +87,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <th>DEVICE</th>
       <th>NIC</th>
       <th>MAC</th>
+      <th>BOND/LACP</th>
       <th>IP</th>
       <th>CONNECTED TO</th>
     </tr>
@@ -98,6 +99,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td rowspan="3">Raspberry Pi 3 B+</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.1</td>
       <td>gs1920 PX</td>
     </tr>
@@ -106,6 +108,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>piy(pi2)</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.2</td>
       <td>gs1920 PX</td>
     </tr>
@@ -114,6 +117,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>piz(pi3)</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.3</td>
       <td>gs1920 PX</td>
     </tr>
@@ -123,6 +127,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>Raspberry Pi 5 8GB</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.4</td>
       <td>gs1920 PX</td>
     </tr>
@@ -132,18 +137,21 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td rowspan="3">My Workstation</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.10</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>NIC2</td>
       <td>00-00-00-00-00-04</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>NIC3</td>
       <td>00-00-00-00-00-04</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
@@ -153,30 +161,35 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td rowspan="5">UbiQuiti EdgeRouter X</td>
       <td>NIC1</td>
       <td>00-00-00-00-00-03</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>NIC2</td>
       <td>00-00-00-00-00-04</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>NIC3</td>
       <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>NIC4</td>
       <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>NIC5</td>
       <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
@@ -186,30 +199,35 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td rowspan="5">Dell PowerEdge R620</td>
       <td>NIC1</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.100</td>
       <td>XX</td>
     </tr>
     <tr>
       <td>NIC2</td>
       <td>00-00-00-00-00-04</td>
+      <td>N/A</td>
       <td>X</td>
       <td>XX</td>
     </tr>
     <tr>
       <td>NIC3</td>
       <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
       <td>X</td>
       <td>XX</td>
     </tr>
     <tr>
       <td>NIC4</td>
       <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
       <td>X</td>
       <td>XX</td>
     </tr>
     <tr>
       <td>NIC5</td>
       <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
       <td>X</td>
       <td>XX</td>
     </tr>
@@ -219,6 +237,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>ZyXEL GS1920-24</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
+      <td>N/A</td>
       <td>172.17.0.253</td>
       <td>XX</td>
     </tr>
