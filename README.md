@@ -93,45 +93,45 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
   </thead>
   <tbody>
-    <!-- PIX -->
+    <!-- PI1 -->
     <tr>
-      <td>pix</td>
-      <td rowspan="3">Raspberry Pi 3 B+</td>
+      <td>pi1</td>
+      <td>Raspberry Pi 5 8GB</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
       <td>172.17.0.1</td>
       <td>gs1920 PX</td>
     </tr>
-    <!-- PIY -->
+     <!-- PI2 -->
     <tr>
-      <td>piy</td>
+      <td>pi2</td>
+      <td rowspan="3">Raspberry Pi 3 B+</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
       <td>172.17.0.2</td>
       <td>gs1920 PX</td>
     </tr>
-    <!-- PIZ -->
+    <!-- PI3 -->
     <tr>
-      <td>piz</td>
+      <td>pi3</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
       <td>172.17.0.3</td>
       <td>gs1920 PX</td>
     </tr>
-    <!-- PIW -->
+    <!-- PI4 -->
     <tr>
-      <td>piw</td>
-      <td>Raspberry Pi 5 8GB</td>
+      <td>pi4</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
       <td>172.17.0.4</td>
       <td>gs1920 PX</td>
     </tr>
-    <!-- Z10 -->
+   <!-- Z10 -->
     <tr>
       <td rowspan="3">z10</td>
       <td rowspan="3">My Workstation</td>
