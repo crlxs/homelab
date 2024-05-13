@@ -193,6 +193,37 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>X</td>
       <td>gs1920 PX</td>
     </tr>
+    <!-- 3505VW -->
+    <tr>
+      <td rowspan="5">3505vw</td>
+      <td rowspan="5">HGU Askey 3505VW</td>
+      <td>ETH1</td>
+      <td>00-00-00-00-00-03</td>
+      <td>N/A</td>
+      <td>X</td>
+      <td>X</td>
+    </tr>
+    <tr>
+      <td>ETH2</td>
+      <td>00-00-00-00-00-04</td>
+      <td>N/A</td>
+      <td>X</td>
+      <td>X</td>
+    </tr>
+    <tr>
+      <td>ETH3</td>
+      <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
+      <td>X</td>
+      <td>X</td>
+    </tr>
+    <tr>
+      <td>ETH4</td>
+      <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
+      <td>X</td>
+      <td>X</td>
+    </tr>
     <!-- R620 -->
     <tr>
       <td rowspan="5">r620</td>
