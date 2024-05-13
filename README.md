@@ -40,10 +40,43 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ### Networks
 
-| NET | VLAN | CIDR           | GW           | DNS | DHCP         | DHCP Range        | Static IPs Range  |
-| :-- | :--- | :------------- | :----------- | :-- | :----------- | :---------------- | :---------------- |
-| 192 | N/A  | 192.168.1.0/24 | 192.168.1.1  | ??? | 192.168.1.1  | .151 to .200      | .1 to .150        |
-| 172 | N/A  | 172.17.0.0/16  | 172.17.0.254 | ??? | 172.17.0.254 | .69.0 to .69.255  | .0.1 to .10.255   |
+<table>
+  <thead>
+    <tr>
+      <th>NET</th>
+      <th>VLAN</th>
+      <th>CIDR</th>
+      <th>GW</th>
+      <th>DNS</th>
+      <th>DHCP</th>
+      <th>DHCP Range</th>
+      <th>Static IPs Range</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>192</td>
+      <td>N/A</td>
+      <td>192.168.1.0/24</td>
+      <td>192.168.1.1</td>
+      <td>???</td>
+      <td>192.168.1.1</td>
+      <td>.151 to.200</td>
+      <td>.1 to.150</td>
+    </tr>
+    <tr>
+      <td>172</td>
+      <td>N/A</td>
+      <td>172.17.0.0/16</td>
+      <td>172.17.0.254</td>
+      <td>???</td>
+      <td>172.17.0.254</td>
+      <td>.69.0 to.69.255</td>
+      <td>.0.1 to.10.255</td>
+    </tr>
+  </tbody>
+</table>
+
 
 ### Hosts
 
