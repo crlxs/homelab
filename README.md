@@ -169,14 +169,13 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>ETH1</td>
       <td>00-00-00-00-00-04</td>
       <td>N/A</td>
-      <td>X</td>
+      <td rowspan="2">bond0</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
       <td>ETH2</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
-      <td>X</td>
       <td>gs1920 PX</td>
     </tr>
     <tr>
