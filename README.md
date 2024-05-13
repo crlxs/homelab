@@ -160,7 +160,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td rowspan="5">erx</td>
       <td rowspan="5">UbiQuiti EdgeRouter X</td>
       <td>ETH0</td>
-      <td>00-00-00-00-00-03</td>
+      <td color="red">00-00-00-00-00-03</td>
       <td>N/A</td>
       <td>X</td>
       <td>gs1920 PX</td>
