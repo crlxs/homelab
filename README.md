@@ -195,8 +195,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
     <!-- 3505VW -->
     <tr>
-      <td rowspan="5">3505vw</td>
-      <td rowspan="5">HGU Askey 3505VW</td>
+      <td rowspan="4">3505vw</td>
+      <td rowspan="4">HGU Askey 3505VW</td>
       <td>ETH1</td>
       <td>00-00-00-00-00-03</td>
       <td>N/A</td>
