@@ -2,7 +2,7 @@
 
 - hosts: all
   vars:
-     deb_architecture: {
+     deb_architecture: { # Had to add, adding docker repo was breaking otherwise because architecture was being written as x86_64 instead of amd64 to docker.list
       "armv6l": "armhf",
       "armv7l": "armhf",
       "aarch64": "arm64",
