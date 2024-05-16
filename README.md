@@ -18,7 +18,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - DynDNS
 - PVE (Proxmox Virtual Environment on my Dell R620)
 - Raspberry Pi 3b+ Kubernetes Cluster, where most of these services are hosted.
-- Ansible
+- Ansible control node
 
 - *To add service matrix(table)*
 
