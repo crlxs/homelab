@@ -1,8 +1,5 @@
 # Run with: ansible-playbook -i inventory.yaml playbook.yaml -K
 
-
-
-
 - hosts: all
   vars:
      deb_architecture: {
