@@ -2,7 +2,7 @@
 
 - hosts: all
   vars:
-     deb_architecture: { # Had to add, adding docker repo was breaking otherwise because architecture was being written as x86_64 instead of amd64 to docker.list
+     deb_architecture: {
       "armv6l": "armhf",
       "armv7l": "armhf",
       "aarch64": "arm64",
@@ -32,7 +32,7 @@
       line: 'net.ipv4.ip_forward = 1'
       create: yes
 
-  - name: Add docker's official GPG key
+  - name: Install docker
     block:
       - name: Install ca-certificates and curl
         apt:
@@ -58,3 +58,21 @@
           repo: deb [arch={{ [ansible_architecture] | map('extract', deb_architecture) | first }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/{{ ansible_system | lower }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
           filename: docker
           state: present
+          update_cache: true
+
+      - name: Install containerd
+        apt:
+          name:
+            - containerd.io
+
+      - name: Create default containerd config file
+        shell: sh -c 'containerd config default > /etc/containerd/config.toml'
+
+      - name: Enable systemd cgroup by find and replace with sed
+        shell: sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+
+      - name: Reload and enable containerd service
+        systemd_service:
+          name: containerd
+          daemon_reload: true
+          enabled: true
