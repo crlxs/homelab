@@ -51,8 +51,7 @@ sudo apt-get update
 # Install containerd
 sudo apt-get install containerd.io -y
 
-# Remove CRI from the disabled_plugins list in /etc/containerd/config.toml.
-# NO LONGER NEEDED WITH NEXT COMMANDS CREATING THE DEFAULT CONFIG FILE
+# Remove CRI from the disabled_plugins list in /etc/containerd/config.toml. NO LONGER NEEDED WITH NEXT COMMANDS CREATING THE DEFAULT CONFIG FILE
 # sudo sed -i.bak '/disabled_plugins/d' /etc/containerd/config.toml
 
 # Create the default config file and enable systemd cgroup by find and replace with sed
@@ -88,17 +87,8 @@ sudo apt-mark hold kubelet kubeadm kubectl
 sudo systemctl restart containerd
 sudo systemctl restart kubelet
 
-
 # --------------------------------------------------------------
 # --------------------------------------------------------------
-# --------------------------------------------------------------
-# --------------------------------------------------------------
-# --------------------------------------------------------------
-# --------------------------------------------------------------
-
-#2.
-#ISSUE: Flannel requires portmap needs to be installed? Im not sure if it is or not an issue tho
-# https://github.com/flannel-io/flannel/tree/master
 
 # From here:
 # 1. kube init the master node, e.g.: sudo kubeadm init --pod-network-cidr 10.10.0.0/16 --ignore-preflight-errors=Mem --v=10
