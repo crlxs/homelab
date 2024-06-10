@@ -1,0 +1,120 @@
+# Run with: ansible-playbook -i inventory.yaml playbook.yaml -K
+
+- hosts: all
+  vars:
+     deb_architecture: {
+      "armv6l": "armhf",
+      "armv7l": "armhf",
+      "aarch64": "arm64",
+      "x86_64": "amd64",
+      "i386": "i386"
+    }
+
+  become: true
+
+  tasks:
+
+  - name: Update and upgrade APT packages
+    apt:
+      upgrade: yes
+      update_cache: yes
+      cache_valid_time: 3600 # One hour
+
+  - name: Disable swap for current session
+    command: swapoff -a
+
+  - name: Disable swap permanently (Find and comment (#) lines containg 'swap' in /etc/fstab)
+    shell: sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+  - name: Enable IPv4 packet forwarding
+    lineinfile:
+      path: /etc/sysctl.d/k8s.conf
+      line: 'net.ipv4.ip_forward = 1'
+      create: yes
+
+  - name: Install docker
+    block:
+      - name: Install ca-certificates and curl
+        apt:
+          name:
+            - ca-certificates
+            - curl
+          state: present
+
+      - name: Create /etc/apt/keyrings directory with appropiate permissions
+        file:
+          path: /etc/apt/keyrings
+          state: directory
+          mode: '0755'
+
+      - name: Download Docker GPG key to /etc/apt/keyrings/docker.asc
+        get_url:
+          url: https://download.docker.com/linux/debian/gpg
+          dest: /etc/apt/keyrings/docker.asc
+          mode: '0644'
+
+      - name: Add Docker APT repository to sources
+        apt_repository:
+          repo: deb [arch={{ [ansible_architecture] | map('extract', deb_architecture) | first }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/{{ ansible_system | lower }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable
+          filename: docker
+          state: present
+          update_cache: true
+
+      - name: Install containerd
+        apt:
+          name:
+            - containerd.io
+
+      - name: Create default containerd config file
+        shell: sh -c 'containerd config default > /etc/containerd/config.toml'
+
+      - name: Enable systemd cgroup by find and replace with sed
+        shell: sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+
+      - name: Reload and enable containerd service
+        systemd_service:
+          name: containerd
+          daemon_reload: true
+          enabled: true
+
+  - name: Install kubeadm, kubelet and kubectl
+    block:
+      - name: Download and install k8s GPG key
+        get_url:
+          url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+          dest: /etc/apt/keyrings/k8s.asc
+          mode: '0644'
+          force: true
+
+      - name: Add k8s APT repository to sources
+        apt_repository:
+          repo: deb [signed-by=/etc/apt/keyrings/k8s.asc] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
+          filename: k8s
+          state: present
+          update_cache: true
+
+      - name: Install k8s packages
+        apt:
+          name:
+            - kubelet
+            - kubeadm
+            - kubectl
+
+      - name: Exclude all k8s packages from system upgrades, to avoid breaking.
+        dpkg_selections:
+          name: "{{ item }}"
+          selection: hold
+        loop:
+          - kubelet
+          - kubeadm
+          - kubectl
+
+      - name: Reload, restart and enable containerd and kubelet
+        systemd_service:
+          name: "{{ item }}"
+          state: restarted
+          daemon_reload: true
+          enabled: true
+        loop:
+          - containerd
+          - kubelet
