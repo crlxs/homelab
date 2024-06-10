@@ -7,3 +7,5 @@ Created using Ansible, kubeadm and Flannel CNI, which posed some challenges (min
 ## Initial Setup
 
 --------------------
+
+Current Grafan deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
