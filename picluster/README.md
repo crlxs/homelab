@@ -8,7 +8,7 @@ Created using Ansible, kubeadm and Flannel CNI, which posed some challenges (min
 
 Create the cluster either by using:
 
-### Ansible
+### A) Ansible
 
 #### 1. Passwordless SSH from control to managed nodes
 
@@ -35,7 +35,7 @@ Create the cluster either by using:
 `ansible-playbook playbook.yaml -i inventory.yaml -K`
 
 
-### Shell script
+### B) Shell script
 
 Simply execute the shell script kubeadmcluster.sh in all the nodes.
 
