@@ -4,7 +4,77 @@ Created using Ansible, kubeadm and Flannel CNI, which posed some challenges (min
 
 --------------------
 
-## Initial Setup
+## Preparing all the nodes
+
+Create the cluster either by using:
+
+### Ansible
+
+#### 1. Passwordless SSH from control to managed nodes
+
+1. On the control node, if you don't have a key, create it:
+
+`ssh-keygen -t rsa -C "user@domain"`
+
+2. Copy public key to each managed node:
+
+`ssh-copy-id user@node`
+
+3. Now you can simply connect as always, without a password:
+
+`ssh user@node`
+
+4. Now, the playbooks will be able to run
+
+#### 2. Run the ansible-playbook in ansible/playbook.yaml
+
+1. Add the list of hosts in ansible/inventory.playbook accordingly
+
+2. Run the playbook:
+
+`ansible-playbook playbook.yaml -i inventory.yaml -K`
+
+
+### Shell script
+
+Simply execute the shell script kubeadmcluster.sh in all the nodes.
+
+---
+
+## Init the master and join the workers with kubeadm
+
+### Init the master:
+
+Change the pod network accordingly:
+
+`sudo kubeadm init --pod-network-cidr 10.10.0.0/16 --ignore-preflight-errors=Mem --v=10`
+
+### Config kubectl in the master:
+
+`mkdir -p $HOME/.kube`
+`sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config`
+`sudo chown $(id -u):$(id -g) $HOME/.kube/config`
+
+### Config network CNI (Flannel, its simple):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 --------------------
 
