@@ -75,6 +75,10 @@ Change the pod network accordingly:
 
 `kubectl get pods -A -o wide`
 
+6. Print the join comman on the master and join the nodes:
+
+`kubeadm token create --print-join-command`
+
 ---
 
 Current Grafana deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following:
