@@ -24,7 +24,7 @@ Create the cluster either by using:
 
 `ssh user@node`
 
-4. Now, the playbooks will be able to run
+4. Now, the playbooks will be able to run. ** SSH once into each node before running the playbook **
 
 #### 2. Run the ansible-playbook in ansible/playbook.yaml
 
@@ -85,6 +85,10 @@ Change the pod network accordingly:
 
 ---
 
-Current Grafana deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following:
-- https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
-- https://grafana.com/grafana/dashboards/315-kubernetes-cluster-monitoring-via-prometheus/
+## TODOs
+
+1. Task for disabling swap permanently in ansible/playbook.yaml can be done better, right now it doesn't if the line has already been commented, although it shouldn't matter much since the playbook is realistically run once.
+
+2. Current Grafana deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following:
+  - https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
+  - https://grafana.com/grafana/dashboards/315-kubernetes-cluster-monitoring-via-prometheus/
