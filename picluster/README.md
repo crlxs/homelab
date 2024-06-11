@@ -51,32 +51,31 @@ Change the pod network accordingly:
 
 ### Config kubectl in the master:
 
-`mkdir -p $HOME/.kube`
-`sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config`
-`sudo chown $(id -u):$(id -g) $HOME/.kube/config`
+1. `mkdir -p $HOME/.kube`
+2. `sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config`
+3. `sudo chown $(id -u):$(id -g) $HOME/.kube/config`
 
 ### Config network CNI (Flannel, its simple):
 
+1. Copy the Flannel manifest
 
+`wget https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml`
 
+2. Modify pod CIDR in kube-flannel.yml to match the one used to init the master.
 
+3. Untaint master
 
+`kubectl taint nodes --all node-role.kubernetes.io/control-plane-`
 
+4. Apply Flannel 
 
+`kubectl apply -f kube-flannel.yml`
 
+5. Confirm:
 
+`kubectl get pods -A -o wide`
 
-
-
-
-
-
-
-
-
-
-
---------------------
+---
 
 Current Grafana deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following:
 - https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
