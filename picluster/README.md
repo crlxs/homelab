@@ -24,7 +24,7 @@ Create the cluster either by using:
 
 `ssh user@node`
 
-4. Now, the playbooks will be able to run. **SSH once into each node before running the playbook**
+4. Now, the playbooks will be able to run. **SSH once into each node before running the playbook.**
 
 #### 2. Run the ansible-playbook in ansible/playbook.yaml
 
