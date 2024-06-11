@@ -75,9 +75,13 @@ Change the pod network accordingly:
 
 `kubectl get pods -A -o wide`
 
-6. Print the join comman on the master and join the nodes:
+6. Print the join command on the master and join the nodes:
 
 `kubeadm token create --print-join-command`
+
+7. List the nodes:
+
+`kubectl get nodes -A -o wide`
 
 ---
 
