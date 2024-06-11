@@ -26,9 +26,9 @@ Create the cluster either by using:
 
 4. Now, the playbooks will be able to run. **SSH once into each node before running the playbook.**
 
-#### 2. Run the ansible-playbook in ansible/playbook.yaml
+#### 2. Run the playbook in ansible/
 
-1. Add the list of hosts in ansible/inventory.playbook accordingly
+1. Add the list of hosts in ansible/inventory.yaml accordingly
 
 2. Run the playbook:
 
