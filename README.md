@@ -21,7 +21,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - Ansible control node
 
 - *To add service matrix(table)*
-- Grafana dashboard: Homelab statistics, weather radar, traffic map, calories
+- Grafana dashboard: Homelab monitoring, weather radar, traffic map, calories
 
 -------------------
 
