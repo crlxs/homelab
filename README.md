@@ -19,9 +19,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - PVE (Proxmox Virtual Environment on my Dell R620)
 - Raspberry Pi 3b+ Kubernetes Cluster, where most of these services are hosted.
 - Ansible control node
-
 - *To add service matrix(table)*
-- Grafana dashboard: Homelab monitoring, weather radar, traffic map, calories
+- Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?
 
 -------------------
 
