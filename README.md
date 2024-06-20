@@ -93,7 +93,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
   </thead>
   <tbody>
-    <!-- PI1 -->
+    <!-- pi-m (k8s master) -->
     <tr>
       <td>pi-m</td>
       <td>Raspberry Pi 5 8GB</td>
@@ -103,28 +103,28 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>172.17.0.1</td>
       <td>gs1920 P24</td>
     </tr>
-     <!-- PI2 -->
+     <!-- pi-x (k8s node1) -->
     <tr>
-      <td>pi2</td>
+      <td>pi-x</td>
       <td rowspan="3">Raspberry Pi 3 B+</td>
-      <td>NICX</td>
-      <td>00-00-00-00-00-00</td>
+      <td>eth0</td>
+      <td>b8:27:eb:d5:c0:15</td>
       <td>N/A</td>
       <td>172.17.0.2</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P18</td>
     </tr>
-    <!-- PI3 -->
+    <!-- pi-y (k8s node2) -->
     <tr>
-      <td>pi3</td>
+      <td>pi-y</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
       <td>172.17.0.3</td>
       <td>gs1920 PX</td>
     </tr>
-    <!-- PI4 -->
+    <!-- pi-z (k8s node3) -->
     <tr>
-      <td>pi4</td>
+      <td>pi-z</td>
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
