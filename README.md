@@ -93,17 +93,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     </tr>
   </thead>
   <tbody>
-    <!-- pi-m (k8s master) -->
-    <tr>
-      <td>pi-m</td>
-      <td>Raspberry Pi 5 8GB</td>
-      <td>eth0</td>
-      <td>2c:cf:67:26:4a:55</td>
-      <td>N/A</td>
-      <td>172.17.0.1</td>
-      <td>gs1920 P24</td>
-    </tr>
-     <!-- pi-x (k8s worker) -->
+    <!-- pi-x (k8s worker) -->
     <tr>
       <td>pi-x</td>
       <td rowspan="3">Raspberry Pi 3 B+</td>
@@ -130,6 +120,16 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>N/A</td>
       <td>172.17.0.4</td>
       <td>gs1920 PX</td>
+    </tr>
+    <!-- pi-m (k8s master) -->
+    <tr>
+      <td>pi-m</td>
+      <td>Raspberry Pi 5 8GB</td>
+      <td>eth0</td>
+      <td>2c:cf:67:26:4a:55</td>
+      <td>N/A</td>
+      <td>172.17.0.1</td>
+      <td>gs1920 P24</td>
     </tr>
    <!-- Z10 -->
     <tr>
