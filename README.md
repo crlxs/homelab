@@ -97,7 +97,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     <tr>
       <td>pi-m</td>
       <td>Raspberry Pi 5 8GB</td>
-      <td>NICX</td>
+      <td>eth0</td>
       <td>2c:cf:67:26:4a:55</td>
       <td>N/A</td>
       <td>172.17.0.1</td>
