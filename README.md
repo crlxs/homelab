@@ -115,11 +115,11 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
     <!-- pi-z (k8s worker) -->
     <tr>
       <td>pi-z</td>
-      <td>NICX</td>
-      <td>00-00-00-00-00-00</td>
+      <td>eth0</td>
+      <td>b8:27:eb:be:ae:a3</td>
       <td>N/A</td>
       <td>172.17.0.4</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P22</td>
     </tr>
     <!-- pi-m (k8s master) -->
     <tr>
