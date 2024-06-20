@@ -95,13 +95,13 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
   <tbody>
     <!-- PI1 -->
     <tr>
-      <td>pi1</td>
+      <td>pi-m</td>
       <td>Raspberry Pi 5 8GB</td>
       <td>NICX</td>
-      <td>00-00-00-00-00-00</td>
+      <td>2c:cf:67:26:4a:55</td>
       <td>N/A</td>
       <td>172.17.0.1</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P24</td>
     </tr>
      <!-- PI2 -->
     <tr>
