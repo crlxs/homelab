@@ -103,7 +103,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>172.17.0.1</td>
       <td>gs1920 P24</td>
     </tr>
-     <!-- pi-x (k8s node1) -->
+     <!-- pi-x (k8s worker) -->
     <tr>
       <td>pi-x</td>
       <td rowspan="3">Raspberry Pi 3 B+</td>
@@ -113,16 +113,16 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>172.17.0.2</td>
       <td>gs1920 P18</td>
     </tr>
-    <!-- pi-y (k8s node2) -->
+    <!-- pi-y (k8s worker) -->
     <tr>
       <td>pi-y</td>
-      <td>NICX</td>
-      <td>00-00-00-00-00-00</td>
+      <td>eth0</td>
+      <td>b8:27:eb:57:ef:a8</td>
       <td>N/A</td>
       <td>172.17.0.3</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P20</td>
     </tr>
-    <!-- pi-z (k8s node3) -->
+    <!-- pi-z (k8s worker) -->
     <tr>
       <td>pi-z</td>
       <td>NICX</td>
