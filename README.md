@@ -6,7 +6,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 ## Services
 
 - Samba DC
-- DNS Server
+- DNS Server (Bind9 on pi-m)
 - NTP Server
 - DHCP Server
 - MDADM USB Array on a Raspberry Pi as an NFS/SMB share (Mostly for read operations, as the USBs won't handle many write cycles).
