@@ -61,8 +61,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>192.168.1.1</td>
       <td>???</td>
       <td>192.168.1.1</td>
-      <td>.151 to.200</td>
-      <td>.1 to.150</td>
+      <td>.151 to .200</td>
+      <td>.1 to .150</td>
     </tr>
     <tr>
       <td>172</td>
