@@ -163,20 +163,20 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>00-00-00-00-00-03</td>
       <td>N/A</td>
       <td>X</td>
-      <td>gs1920 PX</td>
+      <td>3505vw ETH1</td>
     </tr>
     <tr>
       <td>ETH1</td>
       <td>00-00-00-00-00-04</td>
       <td rowspan="2">bond0</td>
 	  <td>N/A</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P6</td>
     </tr>
     <tr>
       <td>ETH2</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P8</td>
     </tr>
     <tr>
       <td>ETH3</td>
