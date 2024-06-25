@@ -71,8 +71,8 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>172.17.0.254</td>
       <td>???</td>
       <td>172.17.0.254</td>
-      <td>.69.0 to.69.255</td>
-      <td>.0.1 to.10.255</td>
+      <td>.69.0 to .69.255</td>
+      <td>.0.1 to .10.255</td>
     </tr>
   </tbody>
 </table>
