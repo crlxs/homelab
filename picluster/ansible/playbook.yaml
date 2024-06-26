@@ -21,6 +21,7 @@
       update_cache: yes
       cache_valid_time: 3600 # One hour
 
+# THIS ONLY WORKS FOR Debian, Raspbian requires other method. Epxlained in .sh script
   - name: Disable swap for current session
     command: swapoff -a
 
