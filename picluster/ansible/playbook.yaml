@@ -1,4 +1,5 @@
 # Run with: ansible-playbook -i inventory.yaml playbook.yaml -K
+# MISSING TASK THAT ADDS  MEM and CPUSET CGROUPS IN /boot/firmware/cmdline.txt for raspberry
 
 - hosts: all
   vars:
