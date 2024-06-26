@@ -5,21 +5,21 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## Services
 
-- [] Samba DC
+- [ ] Samba DC
 - [X] DNS Server (Bind9 on pi-m)
-- [] NTP Server
+- [ ] NTP Server
 - [X] DHCP Server
-- [] MDADM USB Array on a Raspberry Pi as an NFS/SMB share (Mostly for read operations, as the USBs won't handle many write cycles).
-- [] Prometheus/Grafana
-- [] qBitTorrent
-- [] rr suite (Prowlarr, Lidarr, Sonarr, Radarr)
-- [] Torrent-exclusive VPN
-- [] Wireguard VPN for outside access
-- [] DynDNS
-- [] PVE (Proxmox Virtual Environment on my Dell R620)
+- [ ] MDADM USB Array on a Raspberry Pi as an NFS/SMB share (Mostly for read operations, as the USBs won't handle many write cycles).
+- [ ] Prometheus/Grafana
+- [ ] qBitTorrent
+- [ ] rr suite (Prowlarr, Lidarr, Sonarr, Radarr)
+- [ ] Torrent-exclusive VPN
+- [ ] Wireguard VPN for outside access
+- [ ] DynDNS
+- [ ] PVE (Proxmox Virtual Environment on my Dell R620)
 - [X] Raspberry Pi 3b+ Kubernetes Cluster, where most of these services are hosted.
-- [] Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?
-- [] *To add service matrix(table)*
+- [ ] Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?
+- [ ] *To add service matrix(table)*
 -------------------
 
 ## L1 Diagram
