@@ -82,16 +82,6 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
       <td>N/A</td>
       <td>N/A</td>
     </tr>
-     <tr>
-      <td>K8s services</td>
-      <td>N/A</td>
-      <td>172.19.0.0/16</td>
-      <td>N/A</td>
-      <td>N/A</td>
-      <td>N/A</td>
-      <td>N/A</td>
-      <td>N/A</td>
-    </tr>
  </tbody>
 </table>
 
