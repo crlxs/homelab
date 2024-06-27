@@ -92,3 +92,5 @@ Change the pod network accordingly:
 2. Current Grafana deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following:
   - https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
   - https://grafana.com/grafana/dashboards/315-kubernetes-cluster-monitoring-via-prometheus/
+
+3. Ansible tasks for swap only work with Debian and not raspbian, need to implement both.
