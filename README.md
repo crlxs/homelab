@@ -5,6 +5,7 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## Services
 
+- [ ] **Youtube DL**
 - [ ] Samba DC
 - [X] DNS Server (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [ ] NTP Server
