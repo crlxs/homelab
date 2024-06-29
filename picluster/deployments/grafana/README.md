@@ -10,7 +10,7 @@
 > sudo mount /dev/sdXx /mnt/hdd
 6. Edit /etc/fstab for mount at boot
 
-## K8s comenads
+## K8s commands
 1. Create namespace
 > kubectl create namespace grafana
 2. Create pv
