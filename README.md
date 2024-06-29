@@ -5,13 +5,14 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 ## Services
 
-- [ ] **Youtube DL**
+- [ ] **Youtube DL** (Microservice/deployment)
 - [ ] Samba DC
 - [X] DNS Server (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [ ] NTP Server
 - [X] DHCP Server
 - [ ] MDADM USB Array on a Raspberry Pi as an NFS/SMB share (Mostly for read operations, as the USBs won't handle many write cycles).
-- [ ] Prometheus/Grafana
+- [ ] Prometheus (Microservice/deployment)
+- [ ] Grafana (Microservice/deployment)
 - [ ] qBitTorrent
 - [ ] rr suite (Prowlarr, Lidarr, Sonarr, Radarr)
 - [ ] Torrent-exclusive VPN
