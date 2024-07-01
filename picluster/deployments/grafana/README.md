@@ -12,9 +12,7 @@
 7. Configure nfsshare (/etc/exports) for /mnt/grafana
 
 ## K8s commands
-1. Create namespace
-> kubectl create namespace grafana
-2. Create pv, pvc, deployment and service on the grafana namespace
-> kubectl apply -f grafana.yaml --namespace=grafana
+1. Create: namespace, pv, pvc, deployment and service on the grafana namespace
+> kubectl apply -f grafana.yaml
 
 The grafana persistent volume (nfs-grafana-pv) references the nfs share created earlier.
