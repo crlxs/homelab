@@ -1,19 +1,20 @@
 ## Prep
 
 1. Partition new disk.
-2. Format new disk to ext4.
-3. Create dir for mounting (/mnt/hdd/grafana)
-4. Assign dir to proper UID and GUID and give necessary permissions
-> sudo chown -R 472:472 /mnt/hdd/grafana
-> sudo chmod -R 755 /mnt/hdd/grafana
-5. Mount
-> sudo mount /dev/sdXx /mnt/hdd
-6. Edit /etc/fstab for mount at boot
+2. Format new partition to ext4.
+3. Mount to /mnt, edit fstab accordingly to mount at boot.
+4. Create directory for grafana (/mnt/grafana)
+5. Assign dir to proper UID and GUID for grafana and give necessary permissions
+> sudo chown -R 472:472 /mnt/grafana
+<!-- -->
+> sudo chmod -R 755 /mnt/grafana
+6. Edit /etc/fstab accordingly to mount at boot
+7. Configure nfsshare (/etc/exports) for /mnt/grafana
 
 ## K8s commands
 1. Create namespace
 > kubectl create namespace grafana
-2. Create pv
-> kubectl apply -f grafana-pv.yaml
-3. Create pvc, deployment and service
+2. Create pv, pvc, deployment and service on the grafana namespace
 > kubectl apply -f grafana.yaml --namespace=grafana
+
+The grafana persistent volume (nfs-grafana-pv) references the nfs share created earlier.
