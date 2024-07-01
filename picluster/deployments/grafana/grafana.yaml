@@ -14,8 +14,8 @@ spec:
   accessModes:
     - ReadWriteOnce
   claimRef:
-    namespace: grafana
-    name: grafana-pvc
+    namespace: monitoring
+    name: grafana-nfs-pvc
   mountOptions:
     - hard
     - nfsvers=4.1
@@ -108,3 +108,4 @@ spec:
     app: grafana
   sessionAffinity: None
   type: NodePort
+---
