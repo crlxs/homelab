@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 15s
+      external_labels:
+        monitor: 'k8s-monitor'
+    scrape_configs:
+      - job_name: 'prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - target: ['localhost:9090']
+     - job_name: 'K8S'
+       static_configs:
+         - targets: ['pi-m:9100', 'pi-x:9100', 'pi-y:9100', 'pi-z:9100']
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/prometheus/prometheus.yaml
+            subPath: prometheus.yaml
+        ports:
+        - containerPort: 9090
+      volumes:
+        - name: config-volume
+          configMap:
+           name: prometheus-config
+---
+# Nodeport service to view prometheus web UI directly
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: prometheus-websvc
+#  namespace: monitoring
+#spec:
+#  ports:
+#    - port: 9090
+#      protocol: TCP
+#      targetPort: 9090
+#     nodePort: 30090
+# selector:
+#   app: prometheus
+# sessionAffinity: None
+# type: NodePort
+---
+# This is the ClusterIP service that grafana will use as a datasource
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: monitoring
+  name: prometheus-svc
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - name: prometheus-port
+    protocol: TCP
+    port: 9090
+    targetPort: 9090
+---
