@@ -51,25 +51,25 @@ spec:
            name: prometheus-config
 ---
 # Nodeport service to view prometheus web UI directly
-#apiVersion: v1
-#kind: Service
-#metadata:
-#  name: prometheus-websvc
-#  namespace: monitoring
-#spec:
-#  ports:
-#    - port: 9090
-#      protocol: TCP
-#      targetPort: 9090
-#     nodePort: 30090
-# selector:
-#   app: prometheus
-# sessionAffinity: None
-# type: NodePort
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-websvc
+  namespace: monitoring
+spec:
+  ports:
+  - port: 9090
+    protocol: TCP
+    targetPort: 9090
+    nodePort: 30090
+  selector:
+    app: prometheus
+  sessionAffinity: None
+  type: NodePort
 ---
 # This is the ClusterIP service that grafana will use as a datasource
-kind: Service
 apiVersion: v1
+kind: Service
 metadata:
   namespace: monitoring
   name: prometheus-svc
@@ -77,8 +77,8 @@ spec:
   selector:
     app: prometheus
   ports:
-  - name: prometheus-port
-    protocol: TCP
+  - protocol: TCP
     port: 9090
     targetPort: 9090
+  sessionAffinity: None
 ---
