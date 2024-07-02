@@ -48,6 +48,15 @@ data:
         - source_labels: [__meta_kubernetes_endpoints_name]
           regex: 'node_exporter'
           action: keep
+      - job_name: 'pi-m'
+        static_configs:
+          - targets: [ pi-m.h.crlxs.io:9100 ]
+        scheme: http
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            regex: '([^:]+)(:[0-9]+)?'
+            replacement: '${1}'
       - job_name: 'pi-x'
         static_configs:
           - targets: [ pi-x.h.crlxs.io:9100 ]
@@ -57,10 +66,24 @@ data:
             target_label: instance
             regex: '([^:]+)(:[0-9]+)?'
             replacement: '${1}'
-#            - pi-m.h.crlxs.io:9100
-#            - pi-x.h.crlxs.io:9100
-#            - pi-y.h.crlxs.io:9100
-#            - pi-z.h.crlxs.io:9100
+      - job_name: 'pi-y'
+        static_configs:
+          - targets: [ pi-y.h.crlxs.io:9100 ]
+        scheme: http
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            regex: '([^:]+)(:[0-9]+)?'
+            replacement: '${1}'
+      - job_name: 'pi-z'
+        static_configs:
+          - targets: [ pi-z.h.crlxs.io:9100 ]
+        scheme: http
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            regex: '([^:]+)(:[0-9]+)?'
+            replacement: '${1}'
 ---
 apiVersion: apps/v1
 kind: Deployment
