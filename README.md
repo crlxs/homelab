@@ -10,10 +10,11 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [ ] **NTP Server**
 - [X] **DHCP Server**
-- [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles).
-- [X] **Prometheus** (Microservice/deployment)
-- [X] **Grafana** (Microservice/deployment)
+- [X] **Grafana** (K8s deployment)
+- [X] **Prometheus** (K8s deployment)
+- [ ] **Prometheus snmp_exporter** (K8s deployment)
 - [ ] **qBitTorrent**
+- [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles).
 - [ ] **rr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
 - [ ] **Torrent-exclusive VPN**
 - [ ] **Wireguard VPN for outside access**
