@@ -48,6 +48,15 @@ data:
         - source_labels: [__meta_kubernetes_endpoints_name]
           regex: 'node_exporter'
           action: keep
+      - job_name: 'pi-x'
+        static_configs:
+          - targets: [ pi-x.h.crlxs.io:9100 ]
+        scheme: http
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            regex: '([^:]+)(:[0-9]+)?'
+            replacement: '${1}'
 #            - pi-m.h.crlxs.io:9100
 #            - pi-x.h.crlxs.io:9100
 #            - pi-y.h.crlxs.io:9100
