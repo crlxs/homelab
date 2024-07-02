@@ -96,7 +96,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: grafana-svc
+  name: grafana-websvc
   namespace: monitoring
 spec:
   ports:
