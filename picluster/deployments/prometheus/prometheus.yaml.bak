@@ -1,36 +1,5 @@
 ---
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: prometheus-nfs-pv
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  claimRef:
-    namespace: monitoring
-    name: prometheus-nfs-pvc
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:
-    path: /mnt/prometheus
-    server: 172.17.0.1
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: prometheus-nfs-pvc
-  namespace: monitoring
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
@@ -67,10 +36,6 @@ spec:
       labels:
         app: prometheus
     spec:
-      securityContext:
-        runAsUser: 1001
-        runAsGroup: 1001
-        fsGroup: 1001
       containers:
       - name: prometheus
         image: prom/prometheus
@@ -78,17 +43,12 @@ spec:
           - name: config-volume
             mountPath: /etc/prometheus/prometheus.yaml
             subPath: prometheus.yaml
-          - name: tsdb-volume
-            mountPath: /prometheus
         ports:
         - containerPort: 9090
       volumes:
         - name: config-volume
           configMap:
            name: prometheus-config
-        - name: tsdb-volume
-          persistentVolumeClaim:
-            claimName: prometheus-nfs-pvc
 ---
 # Nodeport service to view prometheus web UI directly
 apiVersion: v1
