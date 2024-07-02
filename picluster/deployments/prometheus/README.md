@@ -28,3 +28,8 @@ Steps:
   - sudo systemctl daemon-reload \
   && sudo systemctl enable nodeexporter \
   && sudo systemctl start nodeexporter
+
+---
+
+Prometheus database (TSDB) is in /prometheus inside the pod. To avoid destroying the Micro-SD card of the Pis, I hvae mounted /prometheus to a NFS share in the pi-m (172.17.0.1/mnt/prometheus).
+Prometheus container runs as uid and gid 1001, and /mnt/prometheus is chowned and chmoded to those.
