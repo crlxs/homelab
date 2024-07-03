@@ -30,6 +30,8 @@ spec:
     requests:
       storage: 5Gi
 ---
+# This configmap is poorly implemented
+# I have a job for each node, it would be best to have a single job with all nodes
 apiVersion: v1
 kind: ConfigMap
 metadata:
