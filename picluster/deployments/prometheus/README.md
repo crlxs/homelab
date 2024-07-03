@@ -3,7 +3,7 @@ Refs:
 - https://medium.com/codex/reliable-kubernetes-on-a-raspberry-pi-cluster-monitoring-a771b497d4d3
 - https://prometheus.io/docs/guides/node-exporter/
 
-Steps:
+# Install prometheus node_exporter in each node to publish metrics on port 9100 and scrape them with the prometheus deployment
 
 1. Download the appropiate node_exporter version on each of the nodes:
   - https://github.com/prometheus/node_exporter/releases/download/v<VERSION>/node_exporter-<VERSION>.<OS>-<ARCH>.tar.gz
@@ -16,13 +16,25 @@ Steps:
   - Create file /etc/systemd/system/nodeexporter.service
   - Contents:
 
+
         [Unit]
         Description=NodeExporter
+        After=network.target
+
         [Service]
         TimeoutStartSec=0
-        ExecStart=/usr/local/bin/node_exporter
+        #EnvironmentFile=-/etc/default/node_exporter ##### If you use this paramater the flags passed on ExecStart wont be read, use one or the other
+        User=root
+        ExecStart=/usr/local/bin/node_exporter --collector.systemd --collector.sysctl
+        Restart=on-failure
+        RestartSec=5s
+
         [Install]
         WantedBy=multi-user.target
+
+        # In /etc/default/node_exporter
+        #NODE_EXPORTER_OPTS="--collector.systemd --collector.systemd.unit-whitelist="(named|nodeexporter|nfs-kernel-service|kubelet|containerd).service"
+
 
 4. Register it:
   - sudo systemctl daemon-reload \
