@@ -5,6 +5,7 @@
 3. Prometheus server as a k8s deployment to scrape the metrics.
 4. Grafana deployment to visualize k8s.
 
+---
 
 # Persistency
 
@@ -33,3 +34,9 @@ A quick example with the Grafana directory:
   7. Configure nfsshare (/etc/exports) for /mnt/grafana
   8. Deploy all the resources (PV, PVC, Deployment and Services) on the monitoring namespace through the manifest at deployments/monitoring/grafana/grafana.yaml
     > kubectl apply -f grafana.yaml -n monitoring
+
+---
+
+## Diagram
+
+![Monitoring Diagram](../../../diagrams/MonitoringDiagram.jpg)
