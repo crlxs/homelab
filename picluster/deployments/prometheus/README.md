@@ -34,10 +34,6 @@ Install prometheus node_exporter in each node to publish metrics on port 9100 an
         [Install]
         WantedBy=multi-user.target
 
-        # In /etc/default/node_exporter
-        #NODE_EXPORTER_OPTS="--collector.systemd --collector.systemd.unit-whitelist="(named|nodeexporter|nfs-kernel-service|kubelet|containerd).service"
-
-
 4. Register it:
     - sudo systemctl daemon-reload \
     && sudo systemctl enable nodeexporter \
