@@ -19,20 +19,20 @@ Install prometheus node_exporter in each node to publish metrics on port 9100 an
     - Contents:
 
 
-        [Unit]
-        Description=NodeExporter
-        After=network.target
+`[Unit]
+Description=NodeExporter
+After=network.target
 
-        [Service]
-        TimeoutStartSec=0
-        #EnvironmentFile=-/etc/default/node_exporter ##### If you use this paramater the flags passed on ExecStart wont be read, use one or the other
-        User=root
-        ExecStart=/usr/local/bin/node_exporter --collector.systemd --collector.sysctl
-        Restart=on-failure
-        RestartSec=5s
+[Service]
+TimeoutStartSec=0
+#EnvironmentFile=-/etc/default/node_exporter ##### If you use this paramater the flags passed on ExecStart wont be read, use one or the other
+User=root
+ExecStart=/usr/local/bin/node_exporter --collector.systemd --collector.sysctl
+Restart=on-failure
+RestartSec=5s
 
-        [Install]
-        WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target`
 
 4. Register it:
     - sudo systemctl daemon-reload \
