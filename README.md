@@ -37,6 +37,14 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 
 --------------------
 
+## Monitoring Diagram
+
+Prometheus/Grafana setup in the picluster.
+
+![Monitoring Diagram](diagrams/MonitoringDiagram.jpg)
+
+--------------------
+
 ## Addressing Plan
 
 ### Networks
