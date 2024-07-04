@@ -16,6 +16,7 @@ As prometheus/grafana pods get destroyed and recreated they will loose the confi
   4. Setup an NFS server on the pi-m to expose /mnt/grafana and /mnt/prometheus.
   5. Created a PV for each of the NFS shares.
   6. Created a PVC for each of the deployments that points to the respective NFS shares.
+  7. Mounted the directories requiring persistency (/var/lib/grafana, /etc/grafana/grafana.ini, /etc/prometheus/prometheus.yml and /prometheus) to the NFS share through container VolumeMounts specified in the manifest.
 
 A quick example with the Grafana directory:
 
