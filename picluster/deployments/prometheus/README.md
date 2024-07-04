@@ -8,7 +8,7 @@ Refs:
 Install prometheus node_exporter in each node to publish metrics on port 9100 and scrape them with the prometheus deployment
 
 1. Download the appropiate node_exporter version on each of the nodes:
-    - https://github.com/prometheus/node_exporter/releases/download/v<VERSION>/node_exporter-<VERSION>.<OS>-<ARCH>.tar.gz
+    - https://github.com/prometheus/node_exporter/releases/download/v{VERSION}/node_exporter-{VERSION}.{OS}-{ARCH}.tar.gz
     - wget https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.1.linux-armv7.tar.gz
 
 2. Install:
