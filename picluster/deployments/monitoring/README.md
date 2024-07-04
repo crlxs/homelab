@@ -1,8 +1,8 @@
 # Considerations:
 
 1. Prometheus node_exporter will be installed as a systemd unit in every node to publish metrics on port 9100.
-2. Prometheus snmp_exporter to scrape snmp metrics of the other devices (erx, 3505vw, gs1920, etc).
-3. Prometheus k8s deployment to scrape the data.
+2. Prometheus snmp_exporter as a k8s deployment to scrape snmp metrics of the other devices (erx, 3505vw, gs1920, etc).
+3. Prometheus server as a k8s deployment to scrape the metrics.
 4. Grafana deployment to visualize k8s.
 
 
