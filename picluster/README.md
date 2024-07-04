@@ -89,12 +89,8 @@ Change the pod network accordingly:
 
 1. Task for disabling swap permanently in ansible/playbook.yaml can be done better, right now it doesn't if the line has already been commented, although it shouldn't matter much since the playbook is realistically run once.
 
-2. Current Grafana deployment is really rudimentary, although atleast it showed me it can work. Should redo-it following:
-  - https://grafana.com/docs/grafana/latest/setup-grafana/installation/kubernetes/
-  - https://grafana.com/grafana/dashboards/315-kubernetes-cluster-monitoring-via-prometheus/
+2. Ansible tasks for swap only work with Debian and not raspbian, need to implement both.
 
-3. Ansible tasks for swap only work with Debian and not raspbian, need to implement both.
-
-4. Kernel module "br_netfilter" was missing on all rapberries(not loaded a boot), which caused some weird DNS issues (pods that were in the same node as coredns pods were getting responses for their DNS queries from the coredns pod ip, instead of the coredns service IP (error: reply from unexpected source: podip#53, expected serviceip#53)). Solved by laoding "br_netfilter" adding it on /etc/modules"
- - https://stackoverflow.com/questions/75031883/kubernetes-service-requests-are-sending-back-responses-from-pod-ip-rather-than-s
- - https://github.com/alexellis/k8s-on-raspbian/issues/5
+3. Kernel module "br_netfilter" was missing on all rapberries(not loaded a boot), which caused some weird DNS issues (pods that were in the same node as coredns pods were getting responses for their DNS queries from the coredns pod ip, instead of the coredns service IP (error: reply from unexpected source: podip#53, expected serviceip#53)). Solved by laoding "br_netfilter" adding it on /etc/modules"
+   - https://stackoverflow.com/questions/75031883/kubernetes-service-requests-are-sending-back-responses-from-pod-ip-rather-than-s
+   - https://github.com/alexellis/k8s-on-raspbian/issues/5
