@@ -91,6 +91,6 @@ Change the pod network accordingly:
 
 2. Ansible tasks for swap only work with Debian and not Raspbian, as they use different methods to do so, need to implement both.
 
-3. Kernel module "br_netfilter" was missing on all rapberries(not loaded a boot), which caused some weird DNS issues (pods that were in the same node as coredns pods were getting responses for their DNS queries from the coredns pod ip, instead of the coredns service IP (error: reply from unexpected source: podip#53, expected serviceip#53)). Solved by laoding "br_netfilter" adding it on /etc/modules"
+3. Kernel module "br_netfilter" was missing on all rapberries(not loaded a boot), which caused some weird DNS issues (pods that were in the same node as coredns pods were getting responses for their DNS queries from the coredns pod ip, instead of the coredns service IP (error: reply from unexpected source: podip#53, expected serviceip#53)). Solved by loading "br_netfilter" adding it on /etc/modules"
    - https://stackoverflow.com/questions/75031883/kubernetes-service-requests-are-sending-back-responses-from-pod-ip-rather-than-s
    - https://github.com/alexellis/k8s-on-raspbian/issues/5
