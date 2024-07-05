@@ -10,9 +10,10 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [ ] **NTP Server**
 - [X] **DHCP Server**
-- [X] **Grafana** (K8s deployment)
 - [X] **Prometheus** (K8s deployment)
 - [ ] **Prometheus snmp_exporter** (K8s deployment)
+- [X] **Grafana** (K8s deployment)
+- [X] **Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?**
 - [ ] **qBitTorrent**
 - [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles).
 - [ ] **rr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
@@ -21,7 +22,6 @@ My homelab documentation. Network/System diagrams, configuration files, apps, sc
 - [ ] **DynDNS**
 - [ ] **PVE** (Proxmox Virtual Environment on my Dell R620)
 - [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted.**
-- [ ] **Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?**
 - [ ] **To add service matrix(table)**
 -------------------
 
