@@ -9,7 +9,7 @@
 
 # Persistency
 
-As prometheus/grafana pods get destroyed and recreated they will loose the configurations made. To avoid this, I have:
+As prometheus/grafana pods get destroyed and recreated they will loose the configurations made. To avoid this, I will be mounting the required pod directories to an NFS share for persistency:
 
   1. Attached an SSD to the pi-m, new gpt table + 1 partition with fdisk, formatted the partition to ext4 with mkfs.ext4 and mounted it through /etc/fstab on /mnt.
   2. Mkdired /mnt/grafana and /mnt/prometheus.
