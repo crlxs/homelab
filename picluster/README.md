@@ -87,7 +87,7 @@ Change the pod network accordingly:
 
 ## TODOs/Issues
 
-1. Task for disabling swap permanently in ansible/playbook.yaml can be done better, right now it doesn't if the line has already been commented, although it shouldn't matter much since the playbook is realistically run once.
+1. Ansible task for disabling swap permanently in ansible/playbook.yaml can be done better, right now it doesn't if the line has already been commented, although it shouldn't matter much since the playbook is realistically run once.
 
 2. Ansible tasks for swap only work with Debian and not Raspbian, as they use different methods to do so, need to implement both.
 
