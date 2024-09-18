@@ -10,13 +10,13 @@ Create the cluster either by using:
 
 ### A) Ansible
 
-#### 1. Passwordless SSH from control to managed nodes
+#### 1. Passwordless SSH from master to worker nodes
 
-1. On the control node, if you don't have a key, create it:
+1. On the master node, if you don't have a key, create it:
 
 `ssh-keygen -t rsa -C "user@domain"`
 
-2. Copy public key to each managed node:
+2. Copy public key to each worker node:
 
 `ssh-copy-id user@node`
 
