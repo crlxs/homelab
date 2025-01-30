@@ -5,15 +5,17 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 
 ## Services
 
-- [ ] **Youtube DL** (Microservice/deployment)
-- [ ] **Samba DC**
 - [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
-- [ ] **NTP Server**
 - [X] **DHCP Server**
+- [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted.**
 - [X] **Prometheus** (K8s deployment)
-- [ ] **Prometheus snmp_exporter** (K8s deployment)
 - [X] **Grafana** (K8s deployment)
 - [X] **Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?**
+- [ ] Discord/Telegram public IP bot.
+- [ ] **Youtube DL** (Microservice/deployment)
+- [ ] **Samba DC**
+- [ ] **NTP Server**
+- [ ] **Prometheus snmp_exporter** (K8s deployment)
 - [ ] **qBitTorrent**
 - [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles).
 - [ ] **rr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
@@ -21,7 +23,6 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 - [ ] **Wireguard VPN for outside access**
 - [ ] **DynDNS**
 - [ ] **PVE** (Proxmox Virtual Environment on my Dell R620)
-- [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted.**
 - [ ] **To add service matrix(table)**
 - [ ] **Changelog for tracking**
 -------------------
