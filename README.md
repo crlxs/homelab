@@ -1,5 +1,5 @@
 # 🖥 Homelab 
-My homelab documentation. Network/System diagrams, configuration files, apps, scripts and else.
+My homelab documentation; network/System diagrams, config files, scripts and anything else.
 
 --------------------
 
