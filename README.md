@@ -7,17 +7,17 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 
 - [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [X] **DHCP Server**
-- [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted.**
+- [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted**
 - [X] **Prometheus** (K8s deployment)
 - [X] **Grafana** (K8s deployment)
 - [X] **Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?**
-- [ ] Discord/Telegram public IP bot.
+- [ ] **Discord/Telegram public IP bot**
 - [ ] **Youtube DL** (Microservice/deployment)
 - [ ] **Samba DC**
 - [ ] **NTP Server**
 - [ ] **Prometheus snmp_exporter** (K8s deployment)
 - [ ] **qBitTorrent**
-- [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles).
+- [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles)
 - [ ] **rr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
 - [ ] **Torrent-exclusive VPN**
 - [ ] **Wireguard VPN for outside access**
