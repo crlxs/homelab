@@ -72,20 +72,18 @@ Prometheus/Grafana setup in the picluster.
     <tr>
       <td>Prometheus</td>
       <td>K8s deployment</td>
-      <td>2x K8s SVCs:
-          - ClusterIP for communication with Grafana
-          - NodePort for outside access
-      </td>
+      <td>2x K8s SVCs: ClusterIP for communication with Grafana & NodePort for outside access</td>
       <td>monitoring</td>
       <td>deployment.apps/prometheus</td>
       <td>prometheus-svc (ClusterIP 9090/TCP) and prometheus-websvc (NodePort 9090:30090/TCP)</td>
     </tr>
     <tr>
-      <td>Prometheus</td>
+      <td>Grafana</td>
       <td>K8s deployment</td>
-      <td>K8s NodePort service</td>
-      <td>xx</td>
-      <td>xx</td>
+      <td>K8s NodePort SVC</td>
+      <td>monitoring</td>
+      <td>deployment.apps/grafana</td>
+      <td>grafana-websvc (NodePort 3000:30000/TCP)</td>
     </tr>
     <tr>
       <td>Prometheus</td>
@@ -359,6 +357,6 @@ I have tried different ways of documenting my homelab environment (simple .txt f
 
 #### Security concerns (?)
 
-Yes, sharing my internal network in such detail goes against all and any security practices. That being said, I'm realistically a target to no one.
+Yes, sharing my internal network in such detail goes against all and any security practices.
 
 --------------------
