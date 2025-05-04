@@ -11,8 +11,9 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 - [X] **Prometheus** (K8s deployment)
 - [X] **Grafana** (K8s deployment)
 - [X] **Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?**
+- [X] **Youtube DL** (Microservice/deployment)
+- [X] **Service matrix(table)**
 - [ ] **Discord/Telegram public IP bot**
-- [ ] **Youtube DL** (Microservice/deployment)
 - [ ] **Samba DC**
 - [ ] **NTP Server**
 - [ ] **Prometheus snmp_exporter** (K8s deployment)
@@ -23,7 +24,6 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 - [ ] **Wireguard VPN for outside access**
 - [ ] **DynDNS**
 - [ ] **PVE** (Proxmox Virtual Environment on my Dell R620)
-- [ ] **To add service matrix(table)**
 - [ ] **Changelog for tracking**
 -------------------
 
@@ -44,6 +44,12 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 Prometheus/Grafana setup in the picluster.
 
 ![Monitoring Diagram](diagrams/MonitoringDiagram.jpg)
+
+--------------------
+
+## Service Matrix
+
+This is a service matrix
 
 --------------------
 
