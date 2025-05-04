@@ -61,7 +61,19 @@ This is a service matrix
       <th>K8s</th>
     </tr>
   </thead>
-</table>
+  <tbody>
+    <tr>
+      <td>192</td>
+      <td>N/A</td>
+      <td>192.168.1.0/24</td>
+      <td>192.168.1.1</td>
+      <td>???</td>
+      <td>192.168.1.1</td>
+      <td>.151 to .200</td>
+      <td>.1 to .150</td>
+    </tr>
+  </tbody>
+ </table>
 
 
 --------------------
