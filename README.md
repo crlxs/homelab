@@ -49,8 +49,6 @@ Prometheus/Grafana setup in the picluster.
 
 ## Service Matrix
 
-This is a service matrix
-
 <table>
   <thead>
     <tr>
@@ -63,14 +61,11 @@ This is a service matrix
   </thead>
   <tbody>
     <tr>
-      <td>192</td>
-      <td>N/A</td>
-      <td>192.168.1.0/24</td>
-      <td>192.168.1.1</td>
-      <td>???</td>
-      <td>192.168.1.1</td>
-      <td>.151 to .200</td>
-      <td>.1 to .150</td>
+      <td>Prometheus</td>
+      <td>K8s deployment</td>
+      <td>K8s NodePort service</td>
+      <td>xx</td>
+      <td>xx</td>
     </tr>
   </tbody>
  </table>
