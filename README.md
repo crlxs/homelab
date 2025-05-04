@@ -106,6 +106,10 @@ Prometheus/Grafana setup in the picluster.
 
 --------------------
 
+## ER-X NAT Table
+
+--------------------
+
 ## Addressing Plan
 
 ### Networks
