@@ -70,6 +70,14 @@ Prometheus/Grafana setup in the picluster.
       <td>N/A</td>
     </tr>
     <tr>
+      <td>DHCP Server for 172 network</td>
+      <td>DHCP service on ER-X</td>
+      <td>172.17.0.254</td>
+      <td>N/A</td>
+      <td>N/A</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
       <td>Prometheus</td>
       <td>K8s deployment</td>
       <td>2x K8s SVCs: ClusterIP for communication with Grafana & NodePort for outside access</td>
