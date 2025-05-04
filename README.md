@@ -55,8 +55,9 @@ Prometheus/Grafana setup in the picluster.
       <th>Service</th>
       <th>Deployed As</th>
       <th>Endpoint</th>
-      <th>K8s</th>
-      <th>K8s</th>
+      <th>K8s NS</th>
+      <th>K8s DEP</th>
+      <th>K8s SVC</th>
     </tr>
   </thead>
   <tbody>
