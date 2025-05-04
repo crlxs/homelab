@@ -62,6 +62,29 @@ Prometheus/Grafana setup in the picluster.
   </thead>
   <tbody>
     <tr>
+      <td>DNS Server</td>
+      <td>Bind Server on pi-m</td>
+      <td>172.17.0.1 TCP+UDP/53</td>
+      <td>N/A</td>
+      <td>N/A</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
+      <td>Prometheus</td>
+      <td>K8s deployment</td>
+      <td>2x K8s SVCs (ClusterIP for communication with Grafana and NodePort for outside access)</td>
+      <td>monitoring</td>
+      <td>deployment.apps/prometheus</td>
+      <td>prometheus-svc (ClusterIP 9090/TCP) and prometheus-websvc (NodePort 9090:30090/TCP)</td>
+    </tr>
+    <tr>
+      <td>Prometheus</td>
+      <td>K8s deployment</td>
+      <td>K8s NodePort service</td>
+      <td>xx</td>
+      <td>xx</td>
+    </tr>
+    <tr>
       <td>Prometheus</td>
       <td>K8s deployment</td>
       <td>K8s NodePort service</td>
