@@ -51,6 +51,19 @@ Prometheus/Grafana setup in the picluster.
 
 This is a service matrix
 
+<table>
+  <thead>
+    <tr>
+      <th>Service</th>
+      <th>Deployed As</th>
+      <th>Endpoint</th>
+      <th>K8s</th>
+      <th>K8s</th>
+    </tr>
+  </thead>
+</table>
+
+
 --------------------
 
 ## Addressing Plan
