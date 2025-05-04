@@ -3,7 +3,7 @@ My homelab documentation; network/system diagrams, config files, scripts and any
 
 --------------------
 
-## Services
+## To do
 
 - [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [X] **DHCP Server**
