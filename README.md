@@ -80,7 +80,7 @@ Prometheus/Grafana setup in the picluster.
     <tr>
       <td>Prometheus</td>
       <td>K8s deployment</td>
-      <td>2x K8s SVCs: ClusterIP for communication with Grafana & NodePort for outside access</td>
+      <td>2x K8s SVCs: ClusterIP & NodePort SVC (prometheus-websvc [172.17.0.1/2/3/4:30090/TCP] & ER-X port-mapping [192.168.1.254:60390/TCP])</td>
       <td>monitoring</td>
       <td>deployment.apps/prometheus</td>
       <td>prometheus-svc (ClusterIP 9090/TCP) and prometheus-websvc (NodePort 9090:30090/TCP)</td>
@@ -88,19 +88,20 @@ Prometheus/Grafana setup in the picluster.
     <tr>
       <td>Grafana</td>
       <td>K8s deployment</td>
-      <td>K8s NodePort SVC</td>
+      <td>K8s NodePort SVC (grafana-websvc [172.17.0.1/2/3/4:30000/TCP] & ER-X port-mapping [192.168.1.254:60300/TCP])</td>
       <td>monitoring</td>
       <td>deployment.apps/grafana</td>
       <td>grafana-websvc (NodePort 3000:30000/TCP)</td>
     </tr>
     <tr>
-      <td>Prometheus</td>
+      <td>yt-dlp</td>
       <td>K8s deployment</td>
-      <td>K8s NodePort service</td>
-      <td>xx</td>
-      <td>xx</td>
+      <td>K8s NodePort SVC (grafana-websvc [172.17.0.1/2/3/4:30001/TCP] & ER-X port-mapping [192.168.1.254:60001/TCP])</td>
+      <td>apps</td>
+      <td>deployment.apps/yt-dlp</td>
+      <td>yt-dlp-websvc (NodePort 5000:30001/TCP)</td>
     </tr>
-  </tbody>
+   </tbody>
  </table>
 
 
