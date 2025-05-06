@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yt-dlp
+  namespace: apps
+  labels:
+    app: yt-dlp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yt-dlp
+  template:
+    metadata:
+      labels:
+        app: yt-dlp
+    spec:
+      containers:
+      - name: yt-dlp
+        image: crlxs/yt-dlp
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yt-dlp-websvc
+  namespace: apps
+spec:
+  ports:
+  - port: 5000
+    protocol: TCP
+    targetPort: 5000
+    nodePort: 30001
+  selector:
+    app: yt-dlp
+  type: NodePort
