@@ -1,10 +1,11 @@
 # 🖥 Homelab 
-My homelab documentation; network/system diagrams, config files, scripts and anything else.
+My homelab documentation; network/system diagrams, config files, scripts, source code of my apps and anything else.
 
 --------------------
 
 ## To do
 
+- [] **Server Banners** Login ASCII Banners for each RPi, as an Ansible Module.
 - [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
 - [X] **DHCP Server**
 - [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted**
