@@ -20,7 +20,7 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 - [ ] **Prometheus snmp_exporter** (K8s deployment)
 - [ ] **qBitTorrent**
 - [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles)
-- [ ] **rr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
+- [ ] **Servarr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
 - [ ] **Torrent-exclusive VPN**
 - [ ] **Wireguard VPN for outside access**
 - [ ] **DynDNS**
