@@ -51,30 +51,6 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>N/A</td>
       <td>N/A</td>
     </tr>
-    <tr>
-      <td>Prometheus</td>
-      <td>K8s deployment</td>
-      <td>2x K8s SVCs: ClusterIP & NodePort SVC (prometheus-websvc [172.17.0.1/2/3/4:30090/TCP] & ER-X port-mapping [192.168.1.254:60390/TCP])</td>
-      <td>monitoring</td>
-      <td>deployment.apps/prometheus</td>
-      <td>prometheus-svc (ClusterIP 9090/TCP) and prometheus-websvc (NodePort 9090:30090/TCP)</td>
-    </tr>
-    <tr>
-      <td>Grafana</td>
-      <td>K8s deployment</td>
-      <td>K8s NodePort SVC (grafana-websvc [172.17.0.1/2/3/4:30000/TCP] & ER-X port-mapping [192.168.1.254:60300/TCP])</td>
-      <td>monitoring</td>
-      <td>deployment.apps/grafana</td>
-      <td>grafana-websvc (NodePort 3000:30000/TCP)</td>
-    </tr>
-    <tr>
-      <td>yt-dlp</td>
-      <td>K8s deployment</td>
-      <td>K8s NodePort SVC (grafana-websvc [172.17.0.1/2/3/4:30001/TCP] & ER-X port-mapping [192.168.1.254:60001/TCP])</td>
-      <td>apps</td>
-      <td>deployment.apps/yt-dlp</td>
-      <td>yt-dlp-websvc (NodePort 5000:30001/TCP)</td>
-    </tr>
    </tbody>
  </table>
 
@@ -123,16 +99,6 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>.69.0 to .69.255</td>
       <td>.0.1 to .10.255</td>
     </tr>
-    <tr>
-      <td>K8s pods</td>
-      <td>N/A</td>
-      <td>172.18.0.0/16</td>
-      <td>N/A</td>
-      <td>N/A</td>
-      <td>N/A</td>
-      <td>N/A</td>
-      <td>N/A</td>
-    </tr>
  </tbody>
 </table>
 
@@ -152,43 +118,14 @@ My homelab documentation; network/system diagrams, config files, scripts, source
     </tr>
   </thead>
   <tbody>
-    <!-- pi-x (k8s worker) -->
     <tr>
-      <td>pi-x</td>
-      <td rowspan="3">Raspberry Pi 3 B+</td>
-      <td>eth0</td>
-      <td>b8:27:eb:d5:c0:15</td>
-      <td>N/A</td>
-      <td>172.17.0.2</td>
-      <td>gs1920 P18</td>
-    </tr>
-    <!-- pi-y (k8s worker) -->
-    <tr>
-      <td>pi-y</td>
-      <td>eth0</td>
-      <td>b8:27:eb:57:ef:a8</td>
-      <td>N/A</td>
-      <td>172.17.0.3</td>
-      <td>gs1920 P20</td>
-    </tr>
-    <!-- pi-z (k8s worker) -->
-    <tr>
-      <td>pi-z</td>
-      <td>eth0</td>
-      <td>b8:27:eb:be:ae:a3</td>
-      <td>N/A</td>
-      <td>172.17.0.4</td>
-      <td>gs1920 P22</td>
-    </tr>
-    <!-- pi-m (k8s master) -->
-    <tr>
-      <td>pi-m</td>
+      <td>pi</td>
       <td>Raspberry Pi 5 8GB</td>
       <td>eth0</td>
       <td>2c:cf:67:26:4a:55</td>
       <td>N/A</td>
-      <td>172.17.0.1</td>
-      <td>gs1920 P24</td>
+      <td>192.168.1.100</td>
+      <td>gs1920 P18</td>
     </tr>
    <!-- Z10 -->
     <tr>
@@ -222,34 +159,34 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>00-00-00-00-00-03</td>
       <td>N/A</td>
       <td>X</td>
-      <td>3505vw ETH1</td>
+      <td>gs1920 p10</td>
     </tr>
     <tr>
       <td>ETH1</td>
       <td>00-00-00-00-00-04</td>
       <td rowspan="2">bond0</td>
 	  <td>N/A</td>
-      <td>gs1920 P6</td>
+      <td>gs1920 P12</td>
     </tr>
     <tr>
       <td>ETH2</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
-      <td>gs1920 P8</td>
+      <td>gs1920 P14</td>
     </tr>
     <tr>
       <td>ETH3</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
       <td>X</td>
-      <td>gs1920 PX</td>
+      <td>gs1920 P16</td>
     </tr>
     <tr>
       <td>ETH4</td>
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
       <td>X</td>
-      <td>gs1920 PX</td>
+      <td>n/a</td>
     </tr>
     <!-- 3505VW -->
     <tr>
@@ -280,24 +217,31 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>00-00-00-00-00-05</td>
       <td>N/A</td>
       <td>X</td>
-      <td>X</td>
+      <td>gs1920 P2</td>
     </tr>
     <!-- R620 -->
     <tr>
       <td rowspan="5">r620</td>
       <td rowspan="5">Dell PowerEdge R620</td>
-      <td>NIC1</td>
+      <td>idrac</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
-      <td>172.17.0.100</td>
-      <td>XX</td>
+      <td>172.17.0.1</td>
+      <td>gs1920 P19</td>
     </tr>
     <tr>
-      <td>NIC2</td>
+      <td>NIC1</td>
       <td>00-00-00-00-00-04</td>
       <td>N/A</td>
       <td>X</td>
-      <td>XX</td>
+      <td>gs1920 P21</td>
+    </tr>
+    <tr>
+      <td>NIC2</td>
+      <td>00-00-00-00-00-05</td>
+      <td>N/A</td>
+      <td>X</td>
+      <td>gs1920 P23</td>
     </tr>
     <tr>
       <td>NIC3</td>
@@ -313,13 +257,6 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>X</td>
       <td>XX</td>
     </tr>
-    <tr>
-      <td>NIC5</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>XX</td>
-    </tr>
     <!-- GS1920 -->
     <tr>
       <td>gs1920</td>
@@ -327,7 +264,7 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
-      <td>172.17.0.253</td>
+      <td>192.168.1.253</td>
       <td>XX</td>
     </tr>
   </tbody>
