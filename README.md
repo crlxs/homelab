@@ -5,27 +5,10 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 ## To do
 
-- [ ] **Server Banners** Login ASCII Banners for each RPi, as an Ansible Module.
-- [X] **DNS Server** (Bind9 on pi-m)(to-do: Use gitzone to version control zone files)
-- [X] **DHCP Server**
-- [X] **Raspberry Pi Kubernetes Cluster, where most of these services are hosted**
-- [X] **Prometheus** (K8s deployment)
-- [X] **Grafana** (K8s deployment)
-- [X] **Grafana dashboard: Homelab monitoring, weather radar, traffic map, calorie count, strava metrics, tasks?**
-- [X] **Youtube DL** (Microservice/deployment)
-- [X] **Service matrix(table)**
-- [ ] **Discord/Telegram public IP bot**
-- [ ] **Samba DC**
-- [ ] **NTP Server**
-- [ ] **Prometheus snmp_exporter** (K8s deployment)
-- [ ] **qBitTorrent**
-- [ ] **MDADM USB Array on a Raspberry Pi as an NFS/SMB share** (Mostly for read operations, as the USBs won't handle many write cycles)
-- [ ] **Servarr suite** (Prowlarr, Lidarr, Sonarr, Radarr)
-- [ ] **Torrent-exclusive VPN**
-- [ ] **Wireguard VPN for outside access**
-- [ ] **DynDNS**
-- [ ] **PVE** (Proxmox Virtual Environment on my Dell R620)
-- [ ] **Changelog for tracking**
+- [X] **DNS Server** (Technitium on pi)
+- [ ] **Prometheus**
+- [ ] **Grafana**
+- [ ] **Youtube DL**
 -------------------
 
 ## L1 Diagram
@@ -40,13 +23,6 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 --------------------
 
-## Monitoring Diagram
-
-Prometheus/Grafana setup in the picluster.
-
-![Monitoring Diagram](diagrams/MonitoringDiagram.jpg)
-
---------------------
 
 ## Service Matrix
 
@@ -56,16 +32,13 @@ Prometheus/Grafana setup in the picluster.
       <th>Service</th>
       <th>Deployed As</th>
       <th>Endpoint</th>
-      <th>K8s NS</th>
-      <th>K8s DEP</th>
-      <th>K8s SVC</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>DNS Server</td>
-      <td>Bind Server on pi-m</td>
-      <td>172.17.0.1 TCP+UDP/53</td>
+      <td>Technitium server on pi</td>
+      <td>192.168.1.100 TCP+UDP/53 & TCP 5380 (Web portal)</td>
       <td>N/A</td>
       <td>N/A</td>
       <td>N/A</td>
