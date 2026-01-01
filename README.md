@@ -1,3 +1,5 @@
+## Out of date.
+
 # 🖥 Homelab 
 My homelab documentation; network/system diagrams, config files, scripts, source code of my apps and anything else.
 
