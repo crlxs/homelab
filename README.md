@@ -134,8 +134,8 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>NICX</td>
       <td>00-00-00-00-00-00</td>
       <td>N/A</td>
-      <td>172.17.0.10</td>
-      <td>gs1920 PX</td>
+      <td>DHCP</td>
+      <td>gs1920 P26</td>
     </tr>
     <tr>
       <td>NIC2</td>
@@ -159,7 +159,7 @@ My homelab documentation; network/system diagrams, config files, scripts, source
       <td>00-00-00-00-00-03</td>
       <td>N/A</td>
       <td>X</td>
-      <td>gs1920 p10</td>
+      <td>gs1920 P10</td>
     </tr>
     <tr>
       <td>ETH1</td>
