@@ -6,6 +6,7 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 ## ✅ To do
 
 - [X] **DNS Server** (Technitium on pi)
+- [ ] **DNS-over-QUIC** on Technitium
 - [ ] **Prometheus**
 - [ ] **Grafana**
 - [ ] **Youtube DL**
