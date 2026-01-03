@@ -37,49 +37,19 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 ```
 
 
-## ER-X Port-maps Table
-
-
 ## Addressing Plan
 
 ### Networks
 
-<table>
-  <thead>
-    <tr>
-      <th>NET</th>
-      <th>VLAN</th>
-      <th>CIDR</th>
-      <th>GW</th>
-      <th>DNS</th>
-      <th>DHCP</th>
-      <th>DHCP Range</th>
-      <th>Static IPs Range</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>192</td>
-      <td>N/A</td>
-      <td>192.168.1.0/24</td>
-      <td>192.168.1.1</td>
-      <td>???</td>
-      <td>192.168.1.1</td>
-      <td>.151 to .200</td>
-      <td>.1 to .150</td>
-    </tr>
-    <tr>
-      <td>172</td>
-      <td>N/A</td>
-      <td>172.17.0.0/16</td>
-      <td>172.17.0.254</td>
-      <td>???</td>
-      <td>172.17.0.254</td>
-      <td>.69.0 to .69.255</td>
-      <td>.0.1 to .10.255</td>
-    </tr>
- </tbody>
-</table>
+```
++===========================+======+==============+===============+===============+==============+==================+
+|         NETWORK           | VLAN | GW           | DNS           | DHCP          | DHCP Range   | Static IPs Range |
++===========================+======+==============+===============+===============+==============+==================+
+| 192.168.1.0/24 (Home)     | 192  | 192.168.1.1  | 192.168.1.100 | 192.168.1.100 | .151 to .200 | .1 to .150       |
++---------------------------+------+--------------+---------------+---------------+--------------+------------------+
+| 172.17.0.0/16 (HomeLab)   | 172  | 172.17.0.254 | 192.168.1.100 | 172.17.0.254  | N/A          | N/A              |
++---------------------------+------+--------------+---------------+---------------+--------------+------------------+
+```
 
 ### Hosts
 
@@ -249,6 +219,9 @@ My homelab documentation; network/system diagrams, config files, scripts, source
   </tbody>
 </table>
 </details>
+
+
+### ER-X Port-maps Table
 
 --------------------
 
