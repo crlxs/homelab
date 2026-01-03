@@ -3,7 +3,7 @@
 My homelab documentation; network/system diagrams, config files, scripts, source code of my apps and anything else.
 
 
-## To do
+## ✅ To do
 
 - [X] **DNS Server** (Technitium on pi)
 - [ ] **Prometheus**
@@ -11,12 +11,13 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 - [ ] **Youtube DL**
 
 
-## L1 Diagram
+## 🔌 L1 Diagram
 
 ![L1Diagram](diagrams/L1Diagram.jpg)
 
 
-## L3 Diagram
+## 🔌 L3 Diagram
+
 
 ![L3Diagram](diagrams/L3Diagram.jpg)
 
