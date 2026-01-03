@@ -23,35 +23,7 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 --------------------
 
-
 ## Service Matrix
-
-<table>
-  <thead>
-    <tr>
-      <th>Service</th>
-      <th>Deployed As</th>
-      <th>Endpoint</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>DNS Server</td>
-      <td>Technitium server on pi</td>
-      <td>192.168.1.100 TCP+UDP/53 & TCP 5380 (Web portal)</td>
-    </tr>
-    <tr>
-      <td>NTP Server</td>
-      <td>Chrony server on pi</td>
-      <td>192.168.1.100 UDP/123</td>
-    </tr>
-    <tr>
-      <td>DHCP Server for 172 network</td>
-      <td>DHCP service on ER-X</td>
-      <td>172.17.0.254</td>
-    </tr>
-   </tbody>
-</table>
 
 ```
 +==================================+============+==================================================+
