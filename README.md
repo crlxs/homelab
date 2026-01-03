@@ -11,15 +11,14 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 - [ ] **Youtube DL**
 
 
+## 🔌 L3 Diagram
+
+![L3Diagram](diagrams/L3Diagram.jpg)
+
+
 ## 🔌 L1 Diagram
 
 ![L1Diagram](diagrams/L1Diagram.jpg)
-
-
-## 🔌 L3 Diagram
-
-
-![L3Diagram](diagrams/L3Diagram.jpg)
 
 
 ## Service Matrix
@@ -76,17 +75,5 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 
 ### ER-X Port-maps Table
-
---------------------
-
-## Other
-
-#### Why use a git repository
-
-I have tried different ways of documenting my homelab environment (simple .txt files, docs, spreadsheets). The simplicity of a git repo and having everything condensed on a README.md is really convenient, easy to access, modify, track and share.
-
-#### Security concerns (?)
-
-Yes, sharing my internal network in such detail goes against all and any security practices.
 
 --------------------
