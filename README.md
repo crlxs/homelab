@@ -53,172 +53,26 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 ### Hosts
 
-<details>
-<table>
-  <thead>
-    <tr>
-      <th>HOSTNAME</th>
-      <th>DEVICE</th>
-      <th>NIC</th>
-      <th>MAC</th>
-      <th>BOND/LACP</th>
-      <th>IP</th>
-      <th>CONNECTED TO</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>pi</td>
-      <td>Raspberry Pi 5 8GB</td>
-      <td>eth0</td>
-      <td>2c:cf:67:26:4a:55</td>
-      <td>N/A</td>
-      <td>192.168.1.100</td>
-      <td>gs1920 P18</td>
-    </tr>
-   <!-- Z10 -->
-    <tr>
-      <td rowspan="3">z10</td>
-      <td rowspan="3">My Workstation</td>
-      <td>NICX</td>
-      <td>00-00-00-00-00-00</td>
-      <td>N/A</td>
-      <td>DHCP</td>
-      <td>gs1920 P26</td>
-    </tr>
-    <tr>
-      <td>NIC2</td>
-      <td>00-00-00-00-00-04</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 PX</td>
-    </tr>
-    <tr>
-      <td>NIC3</td>
-      <td>00-00-00-00-00-04</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 PX</td>
-    </tr>
-    <!-- ERX -->
-    <tr>
-      <td rowspan="5">erx</td>
-      <td rowspan="5">UbiQuiti EdgeRouter X</td>
-      <td>ETH0</td>
-      <td>00-00-00-00-00-03</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 P10</td>
-    </tr>
-    <tr>
-      <td>ETH1</td>
-      <td>00-00-00-00-00-04</td>
-      <td rowspan="2">bond1</td>
-	  <td>N/A</td>
-      <td>gs1920 P12</td>
-    </tr>
-    <tr>
-      <td>ETH2</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>gs1920 P14</td>
-    </tr>
-    <tr>
-      <td>ETH3</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 P16</td>
-    </tr>
-    <tr>
-      <td>ETH4</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>n/a</td>
-    </tr>
-    <!-- 3505VW -->
-    <tr>
-      <td rowspan="4">3505vw</td>
-      <td rowspan="4">HGU Askey 3505VW</td>
-      <td>ETH1</td>
-      <td>00-00-00-00-00-03</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>X</td>
-    </tr>
-    <tr>
-      <td>ETH2</td>
-      <td>00-00-00-00-00-04</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>X</td>
-    </tr>
-    <tr>
-      <td>ETH3</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>X</td>
-    </tr>
-    <tr>
-      <td>ETH4</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 P2</td>
-    </tr>
-    <!-- R620 -->
-    <tr>
-      <td rowspan="5">r620</td>
-      <td rowspan="5">Dell PowerEdge R620</td>
-      <td>idrac</td>
-      <td>00-00-00-00-00-00</td>
-      <td>N/A</td>
-      <td>172.17.0.1</td>
-      <td>gs1920 P19</td>
-    </tr>
-    <tr>
-      <td>NIC1</td>
-      <td>00-00-00-00-00-04</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 P21</td>
-    </tr>
-    <tr>
-      <td>NIC2</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>gs1920 P23</td>
-    </tr>
-    <tr>
-      <td>NIC3</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>XX</td>
-    </tr>
-    <tr>
-      <td>NIC4</td>
-      <td>00-00-00-00-00-05</td>
-      <td>N/A</td>
-      <td>X</td>
-      <td>XX</td>
-    </tr>
-    <!-- GS1920 -->
-    <tr>
-      <td>gs1920</td>
-      <td>ZyXEL GS1920-24</td>
-      <td>NICX</td>
-      <td>00-00-00-00-00-00</td>
-      <td>N/A</td>
-      <td>192.168.1.253</td>
-      <td>XX</td>
-    </tr>
-  </tbody>
-</table>
-</details>
+```
++==============+=========================+========+=============+================+================+
+|   HOSTNAME   |          DEVICE         |   NIC  |  BOND/LACP  |       IP       |  CONNECTED TO  |
++==============+=========================+========+=============+================+================+
+| pi           | Raspberry Pi 5 8GB      | eth0   | N/A         | 192.168.1.100  | gs1920 P18     |
++--------------+-------------------------+--------+-------------+----------------+----------------+
+| erx          | Ubiquiti EdgeRouter X   | eth0   | N/A         | 192.168.1.254  | gs1920 P10     |
+|              |                         | eth1   | N/A         | 172.17.0.254   | gs1920 P12     |
++--------------+-------------------------+--------+-------------+----------------+----------------+
+| gs1920       | ZyXEL GS1920-24         | N/A    | N/A         | 192.168.1.253  | N/A            |
++--------------+-------------------------+--------+-------------+----------------+----------------+
+| z10          | My Workstation          | NIC0   | N/A         | 192.168.1.XX   | gs1920 P26     |
++--------------+-------------------------+--------+-------------+----------------+----------------+
+| o2           | HGU Askey 3505VW        | eth4   | N/A         | 192.168.1.1    | gs1920 P2      |
++--------------+-------------------------+--------+-------------+----------------+----------------+
+| r620         | DELL PowerEdge R620     | idrac  | N/A         | 172.17.0.101   | gs1920 P19     |
+|              |                         | eth1   | YES         | 172.17.0.1     | gs1920 P21     |
+|              |                         | eth2   | YES         |                | gs1920 P23     |
++--------------+-------------------------+--------+-------------+----------------+----------------+
+```
 
 
 ### ER-X Port-maps Table
