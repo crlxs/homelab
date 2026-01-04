@@ -23,6 +23,11 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 ![L1Diagram](diagrams/L1Diagram.jpg)
 
 
+## 💾 PVE Storage
+
+![PVEStorage](diagrams/PVEStorage.jpg)
+
+
 ## Service Matrix
 
 ```
