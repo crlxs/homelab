@@ -25,6 +25,8 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 ## 💾 PVE Storage
 
+Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storage with an LXC acting as a NAS.
+
 ![PVEStorage](diagrams/PVEStorage.jpg)
 
 
