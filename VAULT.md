@@ -17,8 +17,8 @@ This setup leverages Proxmox **Bind Mounts** and a **Privileged Container** to s
 
 ### 3. Data Integration (Bind Mounts)
 Direct mapping of host paths to container paths via `/etc/pve/lxc/[CONTAINER-ID].conf`:
-* `mp0: /vault/personal,mp=/mnt/personal`
-* `mp1: /vault/media,mp=/mnt/media`
+* `mp0: /vault/personal,mp=/vault/personal`
+* `mp1: /vault/media,mp=/vault/media`
 
 ### 4. Permission Logic
 * **Ownership:** Files on the host are mapped to `UID:1000` (Main User) and `GID:2000` (Media Group).
