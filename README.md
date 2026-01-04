@@ -7,6 +7,7 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 
 - [X] **DNS Server** (Technitium on pi)
 - [ ] **DNS-over-QUIC** on Technitium
+- [ ] RAID1 proxmox boot SSDs?
 - [ ] **Prometheus**
 - [ ] **Grafana**
 - [ ] **Youtube DL**
