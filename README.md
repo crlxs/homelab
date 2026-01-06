@@ -30,7 +30,7 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 ![PVEStorage](diagrams/PVEStorage.jpg)
 
 
-## Addressing Plan
+## 🌐 Addressing Plan
 
 <details>
 ### Networks
