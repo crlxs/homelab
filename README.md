@@ -48,9 +48,7 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 ```
 
 
-### Hosts
-
-#### Physical
+#### Physical Hosts
 
 ```
 +==============+=========================+=========+=============+================+================+
@@ -74,7 +72,7 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 ```
 
 
-#### Virtual
+#### Virtual Hosts
 
 ```
 +==============+=========================+=========+================+
