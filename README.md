@@ -33,6 +33,7 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 ## 🌐 Addressing Plan
 
 <details>
+
 ### Networks
 
 ```
