@@ -12,7 +12,7 @@ IDRACIP=""
 IDRACUSER=""
 IDRACPASSWORD=""
 
-IDLE_TEMPTHRESHOLD="45" # In celsius
+IDLE_TEMPTHRESHOLD="45"
 NORMAL_TEMPTHRESHOLD="70"
 MAX_TEMPTHRESHOLD="80"
 
@@ -25,6 +25,10 @@ NORMAL_FANSPEEDBASE10="20%" # 20%
 MAX_FANSPEEDBASE10="70%" # 70%
 
 # Logic
+
+# enable manual fan control
+
+ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD raw 0x30 0x30 0x01 0x00
 
 CPU1=$(ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD sdr type temperature | grep "0Eh" | awk -F'|' '{print $5}' | awk '{print $1}')
 CPU2=$(ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD sdr type temperature | grep "0Fh" | awk -F'|' '{print $5}' | awk '{print $1}')
