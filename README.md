@@ -8,9 +8,9 @@ My homelab documentation; network/system diagrams, config files, scripts, source
 - [X] **DNS Server** (Technitium on pi)
 - [X] **DNS-over-QUIC** on Technitium ![docs](https://blog.technitium.com/2023/02/configuring-dns-over-quic-and-https3.html)
 - [ ] RAID1 proxmox boot SSDs?
-- [ ] **Prometheus**
-- [ ] **Grafana**
-- [ ] **Youtube DL**
+- [X] **Prometheus**
+- [X] **Grafana**
+- [X] **Youtube DL**
 
 
 ## 🔌 L3 Diagram
@@ -72,7 +72,22 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 ```
 
 
-#### Virtual Hosts
+#### PVE Virtual Machines
+
+```
++==============+=========================+=========+================+
+|   HOSTNAME   |          DEVICE         |   NIC   |       IP       |
++==============+=========================+=========+================+
+| prowlarr     | PVE Debian 13 VM        | eth0    | 172.17.0.100   |
++--------------+-------------------------+---------+----------------+
+| radarr       | PVE Debian 13 VM        | eth0    | 172.17.0.101   |
++--------------+-------------------------+---------+----------------+
+| sabnzbd      | PVE Debian 13 VM        | eth0    | 172.17.0.200   |
++--------------+-------------------------+---------+----------------+
+```
+
+
+#### PVE LXCs
 
 ```
 +==============+=========================+=========+================+
@@ -80,11 +95,11 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 +==============+=========================+=========+================+
 | vault        | PVE Debian 13 LXC       | eth0    | 172.17.1.1     |
 +--------------+-------------------------+---------+----------------+
-| prowlarr     | PVE Debian 13 VM        | eth0    | 172.17.0.100   |
+| grafana      | PVE LXC                 | eth0    | 172.17.1.2     |
 +--------------+-------------------------+---------+----------------+
-| radarr       | PVE Debian 13 VM        | eth0    | 172.17.0.101   |
+| prometheus   | PVE LXC                 | eth0    | 172.17.1.3     |
 +--------------+-------------------------+---------+----------------+
-| sabnzbd      | PVE Debian 13 VM        | eth0    | 172.17.0.200   |
+| yt-dlp       | PVE LXC                 | eth0    | 172.17.1.4     |
 +--------------+-------------------------+---------+----------------+
 ```
 
@@ -111,6 +126,12 @@ Checkout [VAULT.md](VAULT.md) for a full explanation of how I am handling storag
 | radarr                           | VM "radarr"                | 172.17.0.101 TCP/7878 (Web portal)               |
 +----------------------------------+----------------------------+--------------------------------------------------+
 | sabnzbd                          | VM "sabnzbd"               | 172.17.0.200 ???                                 |
++----------------------------------+----------------------------+--------------------------------------------------+
+| grafana                          | LXC "grafana"              | 172.17.1.2 TCP/3000 (Web portal)                 |
++----------------------------------+----------------------------+--------------------------------------------------+
+| prometheus                       | LXC "prometheus"           | 172.17.1.3 TCP/9090 (Web portal)                 |
++----------------------------------+----------------------------+--------------------------------------------------+
+| yt-dlp                           | LXC "yt-dlp-webui"         | 172.17.1.4 TCP/3033 (Web portal)                 |
 +----------------------------------+----------------------------+--------------------------------------------------+
 ```
 
