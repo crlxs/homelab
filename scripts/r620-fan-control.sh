@@ -76,9 +76,12 @@ echo "--- Run: $DATE ---"
 
 
 # Fetch temperatures - use a timeout to ensure script doesn't hang if IDRAC is slow to respond
-CPU1=$(timeout 10s ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD sdr type temperature | grep "0Eh" | awk -F'|' '{print $5}' | awk '{print $1}')
-CPU2=$(timeout 10s ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD sdr type temperature | grep "0Fh" | awk -F'|' '{print $5}' | awk '{print $1}')
+#CPU1=$(timeout 10s ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD sdr type temperature | grep "0Eh" | awk -F'|' '{print $5}' | awk '{print $1}')
+#CPU2=$(timeout 10s ipmitool -I lanplus -H $IDRACIP -U $IDRACUSER -P $IDRACPASSWORD sdr type temperature | grep "0Fh" | awk -F'|' '{print $5}' | awk '{print $1}')
 
+# Using hardware info directly instead of querying idrac lol xd
+CPU1=$(sensors | grep "Package id" | awk '{print $4}' | tr -d '+°C' | awk -F. '{print $1}' | sort -nr | head -n1)
+CPU2=$(sensors | grep "Package id" | awk '{print $4}' | tr -d '+°C' | awk -F. '{print $1}' | sort -nr | head -n1)
 
 # Safety Check: Did we get valid numbers?
 if [[ ! "$CPU1" =~ ^[0-9]+$ ]] || [[ ! "$CPU2" =~ ^[0-9]+$ ]]; then
