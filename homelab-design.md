@@ -10,6 +10,8 @@
 
 The single most important decision cascades from GPU sharing: a consumer RTX 3060 Ti cannot do SR-IOV/vGPU, so VFIO passthrough binds it to exactly one VM. But if the NVIDIA driver lives on the Proxmox host, any number of LXC containers can share the GPU concurrently (the driver time-slices processes natively, and NVENC is a separate hardware block from CUDA). That makes the host-driver + LXC route the right one here.
 
+
+```
 Raspberry Pi 5 (bare metal, static IP .53)
  ├─ Technitium DNS + adblock (native install)
  └─ chrony NTP server
@@ -21,7 +23,7 @@ Proxmox Host (NVIDIA driver installed on host)
  ├─ VM  110  media      (Docker: Prowlarr/Radarr/Sonarr/Jellyseerr/SABnzbd, virtiofs /tank/data)
  ├─ VM  120  immich     (Docker: official Immich compose, data disk on SATA SSD)
  └─ VM  130  hermes     (Docker or native; NO GPU — calls Ollama over HTTP)
-
+```
 ```
                                 LAN 192.168.1.0/24
                                        │
