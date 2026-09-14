@@ -19,7 +19,7 @@ Raspberry Pi 5 (bare metal, static IP .53)
 Proxmox Host (NVIDIA driver installed on host)
  ├─ LXC 200  jellyfin   (unprivileged, GPU dev-passthrough, bind-mount /tank/data)
  ├─ LXC 201  ollama     (unprivileged, GPU dev-passthrough) ← LLM API server
- ├─ VM  110  media      (Docker: Prowlarr/Radarr/Sonarr/Jellyseerr/SABnzbd, virtiofs /tank/data)
+ ├─ VM  110  media      (Docker: Prowlarr/Radarr/Sonarr/Jellyseerr/SABnzbd + **Reverse Proxy & SSO provider for centralized authentication between all arr services**)
  ├─ VM  120  immich     (Docker: official Immich compose, data disk on SATA SSD) (can go on VM 110)
  └─ VM  130  hermes     (Docker or native; NO GPU — calls Ollama over HTTP)
 ```
