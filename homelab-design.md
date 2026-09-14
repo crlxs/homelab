@@ -24,6 +24,8 @@ Proxmox Host (NVIDIA driver installed on host)
  └─ VM  130  hermes     (Docker or native; NO GPU — calls Ollama over HTTP)
 ```
 
+**Traefik reverse proxy + Authentik SSO provider**
+
 ---
 
 ## 1. Compute Allocation — LXC vs VM, service by service
