@@ -143,6 +143,8 @@ homelab/
 ```
 Key practices: LXC template + VM cloud-init image as the only "golden" artifacts; pin all container image versions in compose (renovate-style bumps later); secrets via ansible-vault; the Windows VM stays semi-manual (provision + hookscript via Ansible, OS config by hand — automating Windows isn't worth it for one VM). Proxmox Backup or vzdump for the apps VM + Immich SSD dataset is your eventual safety net.
 
+**Servarr API keys automation** https://gemini.google.com/app/a2659a0427d47b7c
+
 ---
 
 ## Open decision pending
