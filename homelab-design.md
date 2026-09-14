@@ -23,53 +23,6 @@ Proxmox Host (NVIDIA driver installed on host)
  ├─ VM  120  immich     (Docker: official Immich compose, data disk on SATA SSD) (can go on VM 110)
  └─ VM  130  hermes     (Docker or native; NO GPU — calls Ollama over HTTP)
 ```
-```
-                                LAN 192.168.1.0/24
-                                       │
-        ┌──────────────────────────────┼──────────────────────────────────────┐
-        │                              │                                      │
-┌───────┴────────┐             ┌───────┴───────┐                       ┌──────┴──────┐
-│ Raspberry Pi 5 │             │    Router     │                       │   Clients   │
-│  192.168.1.2   │             │  DHCP opts:   │                       │ (TVs, phones│
-│                │             │  6 (DNS)→Pi   │                       │  laptops)   │
-│ • Technitium   │◄────DNS─────│  42 (NTP)→Pi  │                       └─────────────┘
-│   (DNS+Adblock,│             └───────────────┘
-│   home.lan)    │
-│ • chrony (NTP) │◄───NTP──────────────────────────────┐
-└────────────────┘                                     │
-                                                       │
-┌──────────────────────────────────────────────────────┴───────────────────────────┐
-│                     PROXMOX VE HOST  192.168.1.10  (vmbr0)                       │
-│                     NVIDIA driver on host · chrony → Pi                          │
-│                                                                                  │
-│  ┌─────────────────────┐  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
-│  │ LXC: media-stack    │  │ LXC: jellyfin│  │ LXC: immich  │  │ LXC: inference│  │
-│  │ (unpriv + Docker)   │  │ (unpriv,     │  │ (unpriv +    │  │ (unpriv)      │  │
-│  │ one docker-compose: │  │  native)     │  │  Docker)     │  │               │  │
-│  │ • Prowlarr          │  │ • Jellyfin   │  │ • server     │  │ • Ollama      │  │
-│  │ • Radarr            │  │   NVENC ─┐   │  │ • Postgres   │  │   CUDA ─┐     │  │
-│  │ • Sonarr            │  │          │   │  │ • Redis      │  │         │     │  │
-│  │ • Jellyseerr        │  │ /data ro │   │  │ • ML (opt.   │  │ :11434  │     │  │
-│  │ • SABnzbd           │  │          │   │  │   GPU)──┐    │  │   ▲     │     │  │
-│  │ /data rw            │  │          │   │  │         │    │  │   │     │     │  │
-│  └─────────┬───────────┘  └────────┬─┼───┘  └─────────┼────┘  └───┼─────┼─────┘  │
-│            │                       │ │                │           │     │        │
-│            │ bind-mount            │ └────────────────┼───────────┼─────┤        │
-│            ▼                       ▼                  ▼           │     ▼        │
-│  ┌─────────────────────────────────────────┐   ┌──────────────────┴──────────┐   │
-│  │ ZFS stripe "mediapool" (~1TB, RAID0)    │   │ RTX 3060 Ti 8GB (host drv,  │   │
-│  │ 2x 500GB HDD · /mediapool/media → /data │   │ /dev/nvidia* dev-bound into │   │
-│  └─────────────────────────────────────────┘   │ jellyfin + inference LXCs)  │   │
-│                                                └─────────────────────────────┘   │
-│  ┌──────────────────────┐  ┌───────────────────────┐  ┌───────────────────────┐  │
-│  │ NVMe LVM-thin        │  │ SATA SSD 256GB        │  │ VM: hermes            │  │
-│  │ • all guest root     │  │ • SABnzbd incomplete/ │  │ • Hermes Agent        │  │
-│  │   disks              │  │   unpack scratch      │  │ • sandboxed, no GPU   │  │
-│  │ • Immich Postgres    │  │ • Immich cache (prov.)│  │ • calls Ollama API ───┼──┘
-│  └──────────────────────┘  │ • Docker volumes      │  │ • own chrony → Pi     │
-│                            └───────────────────────┘  └───────────────────────┘
-└──────────────────────────────────────────────────────────────────────────────────┘
-```
 
 ---
 
@@ -86,6 +39,14 @@ Proxmox Host (NVIDIA driver installed on host)
 | Hermes Agent | **VM** | A self-improving agent executes arbitrary code. LXCs share the host kernel — a kernel exploit escapes to Proxmox. A VM gives hardware-level isolation. It doesn't need the GPU itself (it calls the inference API over the network), so VM placement costs nothing. |
 
 Note on Docker-in-LXC: Proxmox officially prefers Docker in VMs, but unprivileged LXC + `nesting=1` + `keyctl=1` is stable and the de-facto homelab standard; it wins here on RAM efficiency and GPU sharing.
+
+Rule of thumb applied: GPU-sharing Linux services → LXC on host driver. Docker-heavy app stacks → one Docker VM. Windows/exclusive-GPU → VM.
+Resource budget (64 GB RAM):
+- Docker "apps" VM: 6 vCPU / 12 GB (Immich ML is the heavy part)
+- Windows VM: 8 vCPU / 16 GB (only when running)
+- Jellyfin LXC: 4 cores / 4 GB · Ollama LXC: 6 cores / 12 GB (models spill from 8 GB VRAM to RAM) · Hermes LXC: 2 cores / 4 GB
+- ZFS ARC cap: 8 GB (see §3) · Host reserve: ~4 GB
+- The E5-2680v4 (14c/28t) handles this comfortably; overcommit vCPUs freely, RAM conservatively (you have no swap).
 
 ---
 
