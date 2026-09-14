@@ -19,9 +19,8 @@ Raspberry Pi 5 (bare metal, static IP .53)
 Proxmox Host (NVIDIA driver installed on host)
  ├─ LXC 200  jellyfin   (unprivileged, GPU dev-passthrough, bind-mount /tank/data)
  ├─ LXC 201  ollama     (unprivileged, GPU dev-passthrough) ← LLM API server
- ├─ LXC 210  dns2       (optional: secondary Technitium, tiny)
  ├─ VM  110  media      (Docker: Prowlarr/Radarr/Sonarr/Jellyseerr/SABnzbd, virtiofs /tank/data)
- ├─ VM  120  immich     (Docker: official Immich compose, data disk on SATA SSD)
+ ├─ VM  120  immich     (Docker: official Immich compose, data disk on SATA SSD) (can go on VM 110)
  └─ VM  130  hermes     (Docker or native; NO GPU — calls Ollama over HTTP)
 ```
 ```
@@ -161,14 +160,27 @@ mp0: /mediapool/media,mp=/data
 
 Layered, all in one Git repo:
 
-1. **Proxmox host bootstrap — Ansible playbook** (idempotent): repos, NVIDIA driver, ZFS pool creation, SATA SSD mount, storage definitions, LXC template download.
-2. **Guest provisioning — OpenTofu/Terraform with the `bpg/proxmox` provider** (declarative LXC/VM inventory: cores, RAM, mounts, `dev:` GPU entries, network) — or Ansible `community.general.proxmox` modules if you prefer one tool.
-3. **In-guest configuration — Ansible roles** per guest (docker install, native Jellyfin, Ollama, chrony for the VM), inventoried by Technitium DNS names.
-4. **Applications — docker-compose files** in the repo (`media-stack/`, `immich/`), deployed by Ansible, pinned image tags, `.env` secrets via **ansible-vault or sops**.
-5. **Pi 5 — its own Ansible playbook** (Technitium + chrony + zone records).
-6. **State that matters** (Immich DB, *arr configs): vzdump/PBS backups of LXC root disks; media pool explicitly excluded.
+Everything above the bare-metal OS installs is automatable and idempotent with Ansible as the single driver (no Terraform needed at this scale — the community.general.proxmox* modules are idempotent enough for a static two-node lab):
 
-Redeploy = `ansible-playbook host.yml` → `tofu apply` → `ansible-playbook guests.yml`. VM templates add little here since Terraform+cloud-init/LXC templates already cover it — skip Packer-built templates for this scale.
+```
+homelab/
+├── inventory/hosts.yml          # pve, pi, apps-vm, lxcs
+├── group_vars/                  # IPs, IDs, mounts, versions
+├── playbooks/
+│   ├── 00-pve-host.yml          # IOMMU/vfio, nvidia driver, ZFS pool+datasets,
+│   │                            #   ARC cap, chrony, DNS, NFS export, hookscript
+│   ├── 01-pi.yml                # Technitium + chrony server
+│   ├── 10-provision.yml         # proxmox module: LXCs (dev0 GPU entries, mp0),
+│   │                            #   apps VM + Windows VM (cloud-init / stub)
+│   ├── 20-lxc-jellyfin.yml      # native install + GPU verify (nvidia-smi)
+│   ├── 20-lxc-ollama.yml        # ollama + model pulls (idempotent)
+│   ├── 20-lxc-hermes.yml
+│   └── 30-apps-vm.yml           # docker install + sync compose/ + `docker compose up -d`
+└── compose/
+    ├── media/compose.yml        # prowlarr, radarr, sonarr, jellyseerr, sabnzbd
+    └── immich/compose.yml       # pinned versions + .env from Ansible template
+```
+Key practices: LXC template + VM cloud-init image as the only "golden" artifacts; pin all container image versions in compose (renovate-style bumps later); secrets via ansible-vault; the Windows VM stays semi-manual (provision + hookscript via Ansible, OS config by hand — automating Windows isn't worth it for one VM). Proxmox Backup or vzdump for the apps VM + Immich SSD dataset is your eventual safety net.
 
 ---
 
