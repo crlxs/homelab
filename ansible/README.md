@@ -2,32 +2,27 @@
 
 ## Requirements
 
-Install the ansible-galaxy collections defined in the requirements file:
+1. Install the ansible-galaxy collections defined in the requirements file:
 
 ```
 ansible-galaxy collection install -r ansible/requirements.yaml
 ```
 
-The Proxmox modules also require some Python packages on the Ansible controller:
+2. The Proxmox modules also require some Python packages on the Ansible controller:
 
 ```
 python3 -m pip install proxmoxer requests requests_toolbelt
 ```
 
-### Proxmox API variables
+3. Proxmox API. The provisioning playbooks run locally and authenticate against the Proxmox API. Connection settings live in `inventory/group_vars/proxmox.yaml`.
 
-The provisioning playbooks run locally and authenticate against the Proxmox
-API. Connection settings live in `inventory/group_vars/proxmox.yaml`.
-
-The API token secret is not committed. Provide it either via an
-ansible-vault encrypted variable (`vault_proxmox_api_token_secret`) or via
-the environment:
+The API token secret is not committed. Provide it either via an ansible-vault encrypted variable (`vault_proxmox_api_token_secret`) or via the environment:
 
 ```
 export PROXMOX_TOKEN_SECRET='...'
 ```
 
-### How to create the API token + user
+3.1. How to create the API token + user
 
 1. Create the Proxmox user
 
