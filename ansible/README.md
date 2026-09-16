@@ -54,6 +54,11 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         chmod 600 ~/.ssh/authorized_keys
         ```
 
+    * **Test the connection**
+
+        ```
+        ssh ansible@192.168.1.93 -i $SSH_KEY_NAME
+        ```
 
 ## Ansible control node requirements(where you run the playbook from)
 
