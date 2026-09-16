@@ -16,10 +16,9 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         - **Privilege Separation**: Uncheck this box. (If checked, you would have to manually assign the permissions from Step 2 to the token itself. Unchecking it allows the token to inherit the user's permissions).
 
     * **Assign permissions both for the user and API key**: Navigate to Datacenter -> Permissions and click Add -> User Permission and API Token permission
-    
-    - Path: /
-    - User: ansible@pve
-    - Role: Administrator
+        - Path: /
+        - User: ansible@pve
+        - Role: Administrator
 
 
 
