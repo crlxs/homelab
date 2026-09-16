@@ -1,19 +1,8 @@
-- name: Download Debian cloud image to the Ansible controller
+- name: Download Debian cloud image directly to Proxmox host
   ansible.builtin.get_url:
     url: "{{ debian_cloud_image_url }}"
-    dest: "{{ debian_cloud_image_path }}"
+    dest: "/var/lib/vz/template/iso/{{ debian_cloud_image_url | basename }}"
     checksum: "{{ debian_cloud_image_checksum | default('', true) or omit }}"
     mode: "0644"
-
-- name: Upload Debian cloud image to Proxmox import storage
-  community.proxmox.proxmox_template:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    validate_certs: "{{ proxmox_validate_certs }}"
-    node: "{{ proxmox_node }}"
-    storage: "{{ proxmox_cloud_image_storage }}"
-    content_type: iso
-    src: "{{ debian_cloud_image_path }}"
-    timeout: 600
+  # Add delegate_to if your main playbook target host is set to 'localhost'
+  # delegate_to: "{{ proxmox_node }}"
