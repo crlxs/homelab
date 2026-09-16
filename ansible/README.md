@@ -32,7 +32,27 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         ```
         apt update && apt install sudo -y
         ```
+
     * **Grant the user sudo privileges**
+    
+        ```
+        usermod -aG sudo ansible
+        ```
+
+    * **Switch to the ansible user and create the .ssh directory**
+
+        ```
+        su - ansible
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ```
+
+    * **Add the public key**
+    
+        ```
+        vim ~/.ssh/authorized_keys
+        chmod 600 ~/.ssh/authorized_keys
+        ```
 
 
 ## Requirements
