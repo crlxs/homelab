@@ -5,13 +5,11 @@
 Ansible uses SSH to perform actions on the machines, but the Proxmox API is also usable. For this, we need to add the SSH key that the ansible user will use and an API token.
 
 1. How to create the API token + user
-    * Create the Proxmox user
+    * Create the Proxmox user: Navigate to Datacenter -> Permissions -> Users and click Add.
 
-Navigate to Datacenter -> Permissions -> Users and click Add.
-
-    - Username: ansible
-    - Realm: Proxmox VE authentication server (NOT PAM)
-    - Password: Empty
+        - Username: ansible
+        - Realm: Proxmox VE authentication server (NOT PAM)
+        - Password: Empty
 
 2. Generate API Token
 
