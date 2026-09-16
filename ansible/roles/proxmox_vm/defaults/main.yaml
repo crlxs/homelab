@@ -1,9 +1,0 @@
-# List of VM definitions to provision. See inventory/group_vars/proxmox.yaml.
-proxmox_vm_definitions: []
-
-# Name of the Proxmox template that VMs are cloned from.
-# Must match proxmox_template_name in the proxmox_debian_template role.
-proxmox_vm_template_name: debian-13-cloud-init-template
-
-# DNS servers configured on the guests via cloud-init.
-proxmox_vm_nameservers: "{{ homelab_dns_servers | default(['192.168.1.100']) }}"

@@ -1,0 +1,8 @@
+- name: Download Debian cloud image
+  ansible.builtin.include_tasks: download-image.yaml
+
+# - name: Create template VM and import the image
+#   ansible.builtin.include_tasks: create-template.yaml
+#
+# - name: Convert the VM into a template
+#   ansible.builtin.include_tasks: finalize-template.yaml

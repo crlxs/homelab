@@ -53,6 +53,12 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         vim ~/.ssh/authorized_keys
         chmod 600 ~/.ssh/authorized_keys
         ```
+    * **Add NOPASSWD rule for ansible user**
+
+        ```
+        echo "ansible ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ansible
+        chmod 440 /etc/sudoers.d/ansible
+        ```
 
     * **Test the connection**
 

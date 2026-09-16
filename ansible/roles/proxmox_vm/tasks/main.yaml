@@ -1,6 +1,0 @@
-- name: Provision each defined VM
-  ansible.builtin.include_tasks: provision-vm.yaml
-  loop: "{{ proxmox_vm_definitions }}"
-  loop_control:
-    loop_var: vm
-    label: "{{ vm.name }} ({{ vm.vmid }})"

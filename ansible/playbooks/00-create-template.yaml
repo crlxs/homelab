@@ -3,4 +3,4 @@
   gather_facts: false
 
   roles:
-    - role: proxmox_debian_template
+    - role: proxmox_vm_template
