@@ -1,0 +1,31 @@
+- name: Create Debian template VM
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ proxmox_template_vmid }}"
+    name: "{{ proxmox_template_name }}"
+    ostype: l26
+    cores: "{{ proxmox_template_cores }}"
+    memory: "{{ proxmox_template_memory }}"
+    scsihw: virtio-scsi-single
+    serial:
+      serial0: socket
+    agent: "1"
+    state: present
+
+- name: Import Debian cloud image as template disk
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ proxmox_template_vmid }}"
+    ide:
+      ide2: "{{ proxmox_template_cloudinit_storage }}:cloudinit,format=raw"
+    boot: order=scsi0
+    update: true
+    update_unsafe: true

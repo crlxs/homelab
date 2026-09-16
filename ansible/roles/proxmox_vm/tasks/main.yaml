@@ -1,0 +1,46 @@
+- name: Clone VM from Debian cloud-init template
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    newid: "{{ item.vmid }}"
+    name: "{{ item.name }}"
+    full: true
+    storage: "{{ proxmox_storage }}"
+    timeout: 600
+    state: present
+
+- name: Configure VM cloud-init and hardware
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ item.vmid }}"
+    cores: "{{ item.cores }}"
+    memory: "{{ item.memory }}"
+    onboot: "{{ item.onboot | default(true) }}"
+    agent: "1"
+    ciuser: "{{ ansible_user_name }}"
+    sshkeys: "{{ ansible_user_public_key }}"
+    nameservers:
+      - 8.8.8.8
+    net:
+      net0: "virtio,bridge={{ proxmox_bridge }}"
+    ipconfig:
+      ipconfig0: "ip={{ item.ip }},gw={{ item.gateway }}"
+    update: true
+    update_unsafe: true
+
+- name: Start VM
+  community.proxmox.proxmox_kvm:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ item.vmid }}"
+    state: started

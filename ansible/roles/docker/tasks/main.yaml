@@ -1,0 +1,57 @@
+- name: Verify we are running on Debian
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == "Debian"
+      - ansible_facts.distribution == "Debian"
+    fail_msg: "The docker role currently supports Debian only."
+
+- name: Install Docker repository prerequisites
+  ansible.builtin.apt:
+    name: "{{ docker_apt_prerequisites }}"
+    state: present
+    update_cache: true
+
+- name: Ensure APT keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  
+- name: Install Docker repository signing key
+  ansible.builtin.get_url:
+    url: "{{ docker_apt_key_url }}"
+    dest: "{{ docker_apt_keyring }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure Docker APT repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by={{ docker_apt_keyring }}
+      https://download.docker.com/linux/debian
+      {{ ansible_facts.distribution_release }}
+      stable
+    filename: "{{ docker_apt_repository_file }}"
+    state: present
+    update_cache: true
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Ensure Docker service is enabled and running
+  ansible.builtin.service:
+    name: docker
+    enabled: true
+    state: started
+
+
+
+
+
+
+

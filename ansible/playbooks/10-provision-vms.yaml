@@ -1,0 +1,9 @@
+- name: Provision homelab VMs
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  roles:
+    - role: proxmox_vm
+      vars:
+        proxmox_vm_definitions: "{{ proxmox_vms }}"

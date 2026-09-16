@@ -1,0 +1,13 @@
+docker_apt_key_url: https://download.docker.com/debian/gpg
+docker_apt_keyring: /etc/apt/keyrings/docker.asc
+docker_apt_repository_file: docker
+
+docker_apt_prerequisites:
+  - ca-certificates
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin

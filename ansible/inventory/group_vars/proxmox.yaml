@@ -1,0 +1,9 @@
+# proxmox_vms:
+#   - name: xxx
+#     vmid: 10x
+#     ip:
+#     gateway:
+#     cores:
+#     memory:
+#     disk_size:
+#     onboot: true
