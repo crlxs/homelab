@@ -18,3 +18,7 @@ proxmox_template_disk_storage: local-lvm
 proxmox_template_cloudinit_storage: local-lvm
 proxmox_template_memory: 2048
 proxmox_template_cores: 2
+
+# Cloud init user config
+debian_cloud_user: ansible
+debian_cloud_user_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJM2onmBkkExGvD5kY1nhCcCHjPVoDkSb9gqfEwFCrt+ elon@tesla.com"

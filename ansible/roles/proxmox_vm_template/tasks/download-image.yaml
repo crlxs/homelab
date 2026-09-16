@@ -1,8 +1,6 @@
 - name: Download Debian cloud image directly to Proxmox host
   ansible.builtin.get_url:
     url: "{{ debian_cloud_image_url }}"
-    dest: "/var/lib/vz/template/iso/{{ debian_cloud_image_url | basename }}"
+    dest: "/var/lib/vz/import/{{ debian_cloud_image_url | basename }}"
     checksum: "{{ debian_cloud_image_checksum | default('', true) or omit }}"
     mode: "0644"
-  # Add delegate_to if your main playbook target host is set to 'localhost'
-  # delegate_to: "{{ proxmox_node }}"

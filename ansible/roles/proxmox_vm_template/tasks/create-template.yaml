@@ -1,4 +1,71 @@
-- name: Create Debian template VM
+# - name: Create Debian template VM with Cloud-init and drive
+#   community.proxmox.proxmox_kvm:
+#     api_host: "{{ proxmox_api_host }}"
+#     api_user: "{{ proxmox_api_user }}"
+#     api_token_id: "{{ proxmox_api_token_id }}"
+#     api_token_secret: "{{ proxmox_api_token_secret }}"
+#     validate_certs: "{{ proxmox_validate_certs }}"
+#     node: "{{ proxmox_node }}"
+#     vmid: "{{ proxmox_template_vmid }}"
+#     name: "{{ proxmox_template_name }}"
+#     description: "{{ proxmox_template_description }}"
+#     ostype: l26
+#     cores: "{{ proxmox_template_cores }}"
+#     memory: "{{ proxmox_template_memory }}"
+#     scsihw: virtio-scsi-single
+#     serial:
+#       serial0: socket
+#     agent: "1"
+#     ciuser: "{{ debian_cloud_user | default('debian') }}"
+#     sshkeys: "{{ debian_cloud_user_public_key }}"
+#     ide:
+#       ide2: "{{ proxmox_template_cloudinit_storage }}:cloudinit,format=raw"
+#     state: present
+#   delegate_to: localhost
+#
+# - name: Import Debian cloud image as the template root disk (scsi0)
+#   community.proxmox.proxmox_disk:
+#     api_host: "{{ proxmox_api_host }}"
+#     api_user: "{{ proxmox_api_user }}"
+#     api_token_id: "{{ proxmox_api_token_id }}"
+#     api_token_secret: "{{ proxmox_api_token_secret }}"
+#     validate_certs: "{{ proxmox_validate_certs }}"
+#     vmid: "{{ proxmox_template_vmid }}"
+#     disk: scsi0
+#     storage: "{{ proxmox_template_disk_storage }}"
+#     import_from: "{{ proxmox_cloud_image_storage }}:import/{{ debian_cloud_image_name }}"
+#     timeout: 600
+#     state: present
+#   delegate_to: localhost
+#
+# - name: Check current VM configuration
+#   community.proxmox.proxmox_vm_info:
+#     api_host: "{{ proxmox_api_host }}"
+#     api_user: "{{ proxmox_api_user }}"
+#     api_token_id: "{{ proxmox_api_token_id }}"
+#     api_token_secret: "{{ proxmox_api_token_secret }}"
+#     validate_certs: "{{ proxmox_validate_certs }}"
+#     vmid: "{{ proxmox_template_vmid }}"
+#   register: vm_info
+#   delegate_to: localhost
+#
+# - name: Attach cloud-init drive and set boot order
+#   community.proxmox.proxmox_kvm:
+#     api_host: "{{ proxmox_api_host }}"
+#     api_user: "{{ proxmox_api_user }}"
+#     api_token_id: "{{ proxmox_api_token_id }}"
+#     api_token_secret: "{{ proxmox_api_token_secret }}"
+#     validate_certs: "{{ proxmox_validate_certs }}"
+#     node: "{{ proxmox_node }}"
+#     vmid: "{{ proxmox_template_vmid }}"
+#     ide:
+#       ide2: "{{ proxmox_template_cloudinit_storage }}:cloudinit,format=raw"
+#     boot: order=scsi0
+#     update: true
+#     update_unsafe: true
+#   when: vm_info.proxmox_vms[0].ide2 is not defined
+#   delegate_to: localhost
+- name: Create Debian template VM with Cloud-init and drive
   community.proxmox.proxmox_kvm:
     api_host: "{{ proxmox_api_host }}"
     api_user: "{{ proxmox_api_user }}"
@@ -16,7 +83,13 @@
     serial:
       serial0: socket
     agent: "1"
+    ciuser: "{{ debian_cloud_user | default('debian') }}"
+    sshkeys: "{{ debian_cloud_user_public_key }}"
+    ide:
+      ide2: "{{ proxmox_template_cloudinit_storage }}:cloudinit,format=raw"
+    boot: order=scsi0
     state: present
+  delegate_to: localhost
 
 - name: Import Debian cloud image as the template root disk (scsi0)
   community.proxmox.proxmox_disk:
@@ -31,8 +104,9 @@
     import_from: "{{ proxmox_cloud_image_storage }}:import/{{ debian_cloud_image_name }}"
     timeout: 600
     state: present
+  delegate_to: localhost
 
-- name: Attach cloud-init drive and set boot order
+- name: Convert Debian VM into a Proxmox template
   community.proxmox.proxmox_kvm:
     api_host: "{{ proxmox_api_host }}"
     api_user: "{{ proxmox_api_user }}"
@@ -41,8 +115,6 @@
     validate_certs: "{{ proxmox_validate_certs }}"
     node: "{{ proxmox_node }}"
     vmid: "{{ proxmox_template_vmid }}"
-    ide:
-      ide2: "{{ proxmox_template_cloudinit_storage }}:cloudinit,format=raw"
-    boot: order=scsi0
-    update: true
-    update_unsafe: true
+    state: template
+    force: true
+  delegate_to: localhost
