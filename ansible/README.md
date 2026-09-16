@@ -10,17 +10,12 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         - **Realm**: Proxmox VE authentication server (NOT PAM)
         - **Password**: Empty
 
-2. Generate API Token
+    * **Generate API Token**: Navigate to Datacenter -> Permissions -> API Toklens and click Add.
+        - **User**: ansible@pve
+        - **TokenId**: ansible (must match the proxmox_api_token_id at ansible/inventory/group_vars/proxmox.yaml)
+        - **Privilege Separation**: Uncheck this box. (If checked, you would have to manually assign the permissions from Step 2 to the token itself. Unchecking it allows the token to inherit the user's permissions).
 
-Navigate to Datacenter -> Permissions -> API Toklens and click Add.
-
-    - User: ansible@pve
-    - TokenId: ansible (must match the proxmox_api_token_id at ansible/inventory/group_vars/proxmox.yaml)
-    - Privilege Separation: Uncheck this box. (If checked, you would have to manually assign the permissions from Step 2 to the token itself. Unchecking it allows the token to inherit the user's permissions).
-
-3. Assign permissions both for the user and API key
-
-Navigate to Datacenter -> Permissions and click Add -> User Permission and API Token permission
+    * **Assign permissions both for the user and API key**: Navigate to Datacenter -> Permissions and click Add -> User Permission and API Token permission
     
     - Path: /
     - User: ansible@pve
