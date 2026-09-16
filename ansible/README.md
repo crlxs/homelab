@@ -20,7 +20,7 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         - User: ansible@pve
         - Role: Administrator
 
-2. How to add the ansible user and SSH key in the node:
+2. Add the ansible user and SSH key in the node:
     * **Create system user from within the node**:
     
         ```
@@ -55,7 +55,7 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
         ```
 
 
-## Requirements
+## Ansible control node requirements(where you run the playbook from)
 
 1. Install the ansible-galaxy collections defined in the requirements file:
 
@@ -76,9 +76,6 @@ The API token secret is not committed. Provide it either via an ansible-vault en
 ```
 export PROXMOX_TOKEN_SECRET='...'
 ```
-
-
-
 
 ## Layout
 
