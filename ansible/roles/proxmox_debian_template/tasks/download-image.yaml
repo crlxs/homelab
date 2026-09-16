@@ -14,6 +14,6 @@
     validate_certs: "{{ proxmox_validate_certs }}"
     node: "{{ proxmox_node }}"
     storage: "{{ proxmox_cloud_image_storage }}"
-    content_type: import
+    content_type: iso
     src: "{{ debian_cloud_image_path }}"
     timeout: 600

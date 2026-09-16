@@ -3,7 +3,7 @@
 #   - an ansible-vault encrypted file (inventory/group_vars/proxmox/vault.yaml), or
 #   - the PROXMOX_TOKEN_SECRET environment variable.
 proxmox_api_host: 192.168.1.93
-proxmox_api_user: terraform-prov@pve
+proxmox_api_user: ansible@pve #create a dedicated user in the proxmox UI
 proxmox_api_token_id: ansible
 proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret | default(lookup('env', 'PROXMOX_TOKEN_SECRET')) }}"
 proxmox_node: pve

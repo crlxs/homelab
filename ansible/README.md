@@ -5,13 +5,13 @@
 Install the ansible-galaxy collections defined in the requirements file:
 
 ```
-ansible-galaxy collection install -r requirements.yaml
+ansible-galaxy collection install -r ansible/requirements.yaml
 ```
 
 The Proxmox modules also require some Python packages on the Ansible controller:
 
 ```
-python3 -m pip install proxmoxer requests
+python3 -m pip install proxmoxer requests requests_toolbelt
 ```
 
 ## Layout
@@ -46,6 +46,33 @@ the environment:
 export PROXMOX_TOKEN_SECRET='...'
 ```
 
+### How to create the API token + user
+
+1. Create the Proxmox user
+
+Navigate to Datacenter -> Permissions -> Users and click Add.
+
+    - Username: ansible
+    - Realm: Proxmox VE authentication server (NOT PAM)
+    - Password: Empty
+
+2. Generate API Token
+
+Navigate to Datacenter -> Permissions -> API Toklens and click Add.
+
+    - User: ansible@pve
+    - TokenId: ansible (must match the proxmox_api_token_id at ansible/inventory/group_vars/proxmox.yaml)
+    - Privilege Separation: Uncheck this box. (If checked, you would have to manually assign the permissions from Step 2 to the token itself. Unchecking it allows the token to inherit the user's permissions).
+
+3. Assign permissions both for the user and API key
+
+Navigate to Datacenter -> Permissions and click Add -> User Permission and API Token permission
+    
+    - Path: /
+    - User: ansible@pve
+    - Role: Administrator
+
+
 ## Usage
 
 Run from the `ansible/` directory so `ansible.cfg` is picked up:
@@ -57,3 +84,4 @@ ansible-playbook playbooks/10-provision-vms.yaml
 
 VM definitions (name, vmid, ip, resources) are declared in
 `inventory/group_vars/proxmox.yaml` under `proxmox_vms`.
+
