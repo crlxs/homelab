@@ -1,26 +1,8 @@
 # Ansible setup for homelab provisioning on Proxmox
 
-## Requirements
+## Proxmox Node requirements
 
-1. Install the ansible-galaxy collections defined in the requirements file:
-
-```
-ansible-galaxy collection install -r ansible/requirements.yaml
-```
-
-2. The Proxmox modules also require some Python packages on the Ansible controller:
-
-```
-python3 -m pip install proxmoxer requests requests_toolbelt
-```
-
-3. Proxmox API. The provisioning playbooks run locally and authenticate against the Proxmox API. Connection settings live in `inventory/group_vars/proxmox.yaml`.
-
-The API token secret is not committed. Provide it either via an ansible-vault encrypted variable (`vault_proxmox_api_token_secret`) or via the environment:
-
-```
-export PROXMOX_TOKEN_SECRET='...'
-```
+Ansible uses SSH to perform actions on the machines, but the Proxmox API is also usable. For this, we need to add the SSH key that the ansible user will use and an API token.
 
 3.1. How to create the API token + user
 
@@ -47,6 +29,30 @@ Navigate to Datacenter -> Permissions and click Add -> User Permission and API T
     - Path: /
     - User: ansible@pve
     - Role: Administrator
+
+
+
+## Requirements
+
+1. Install the ansible-galaxy collections defined in the requirements file:
+
+```
+ansible-galaxy collection install -r ansible/requirements.yaml
+```
+
+2. The Proxmox modules also require some Python packages on the Ansible controller:
+
+```
+python3 -m pip install proxmoxer requests requests_toolbelt
+```
+
+3. Proxmox API. The provisioning playbooks run locally and authenticate against the Proxmox API. Connection settings live in `inventory/group_vars/proxmox.yaml`.
+
+The API token secret is not committed. Provide it either via an ansible-vault encrypted variable (`vault_proxmox_api_token_secret`) or via the environment:
+
+```
+export PROXMOX_TOKEN_SECRET='...'
+```
 
 
 
