@@ -22,9 +22,17 @@ Ansible uses SSH to perform actions on the machines, but the Proxmox API is also
 
 2. How to add the ansible user and SSH key in the node:
     * **Create system user from within the node**:
+    
         ```
         adduser ansible
         ```
+    
+    * **Install sudo**
+
+        ```
+        apt update && apt install sudo -y
+        ```
+    * **Grant the user sudo privileges**
 
 
 ## Requirements
