@@ -1,9 +1,27 @@
+# Proxmox API connection settings.
+# The token secret is NOT stored here. Provide it via one of:
+#   - an ansible-vault encrypted file (inventory/group_vars/proxmox/vault.yaml), or
+#   - the PROXMOX_TOKEN_SECRET environment variable.
+proxmox_api_host: 192.168.1.93
+proxmox_api_user: terraform-prov@pve
+proxmox_api_token_id: ansible
+proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret | default(lookup('env', 'PROXMOX_TOKEN_SECRET')) }}"
+proxmox_node: pve
+proxmox_validate_certs: false
+
+# Storage / network defaults.
+proxmox_storage: local-lvm
+proxmox_cloud_image_storage: local
+proxmox_bridge: vmbr0
+
+# VM definitions provisioned by playbooks/10-provision-vms.yaml.
+proxmox_vms: []
 # proxmox_vms:
-#   - name: xxx
-#     vmid: 10x
-#     ip:
-#     gateway:
-#     cores:
-#     memory:
-#     disk_size:
+#   - name: media
+#     vmid: 110
+#     ip: 172.17.0.100/16
+#     gateway: 172.17.0.254
+#     cores: 6
+#     memory: 12288
+#     disk_size: 64G
 #     onboot: true

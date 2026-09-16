@@ -1,0 +1,6 @@
+- name: Create the Debian cloud-init VM template on Proxmox
+  hosts: proxmox
+  gather_facts: false
+
+  roles:
+    - role: proxmox_debian_template

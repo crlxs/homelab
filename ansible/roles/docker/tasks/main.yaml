@@ -18,7 +18,7 @@
     owner: root
     group: root
     mode: "0755"
-  
+
 - name: Install Docker repository signing key
   ansible.builtin.get_url:
     url: "{{ docker_apt_key_url }}"
@@ -30,7 +30,7 @@
 - name: Configure Docker APT repository
   ansible.builtin.apt_repository:
     repo: >-
-      deb [signed-by={{ docker_apt_keyring }}
+      deb [signed-by={{ docker_apt_keyring }}]
       https://download.docker.com/linux/debian
       {{ ansible_facts.distribution_release }}
       stable
@@ -48,10 +48,6 @@
     name: docker
     enabled: true
     state: started
-
-
-
-
 
 
 

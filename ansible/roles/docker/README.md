@@ -1,3 +1,3 @@
 # Docker Ansible Role
 
-Install and configured docker engine, compose and the necessary dependencies on Debian systems.:w
+Installs and configures the Docker engine, the compose plugin and the necessary dependencies on Debian systems.

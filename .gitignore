@@ -1,0 +1,12 @@
+# Ansible
+*.retry
+ansible/.vault_pass
+ansible/inventory/group_vars/**/*.local.yaml
+
+# Secrets / keys
+*.pem
+id_*
+!*.pub
+
+# OS noise
+.DS_Store
