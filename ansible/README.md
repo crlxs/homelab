@@ -88,7 +88,7 @@ the environment:
 export PROXMOX_TOKEN_SECRET='...'
 ```
 
-#### How to create the API token + user
+### How to create the API token + user
 
 1. Create the Proxmox user
 
