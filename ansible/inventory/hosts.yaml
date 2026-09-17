@@ -3,13 +3,11 @@ all:
     proxmox:
       hosts:
         pve-node:
-          ansible_host: 192.168.1.93
+          ansible_host: 192.168.1.100
           ansible_user: ansible
           ansible_become: true
 
-    # Guest VMs are added dynamically by playbooks/10-provision-vms.yaml
-    # (add_host into the "provisioned_vms" group). Add static entries here
-    # once VMs are permanent and you want to manage them directly, e.g.:
+    # Guest VMs are added dynamically by playbooks/00-provision-vms.yaml (add_host into the "provisioned_vms" group). Add static entries here once VMs are permanent and you want to manage them directly, e.g.:
     #
     # vms:
     #   hosts:
