@@ -1,1 +1,25 @@
-proxmox_debian13_template_vmid: 9000
+# Golden image template to clone VMs from.
+# The template is created manually on the Proxmox node (see ansible/README.md
+# "Golden image prerequisites") and is NOT managed by this role.
+proxmox_vm_template_vmid: 9000
+
+# Full clones get their own independent disk (slower to create, but the
+# template can be modified or deleted without affecting existing VMs).
+proxmox_vm_full_clone: true
+
+# Fallback values applied when a VM entry in proxmox_vms does not override them.
+proxmox_vm_default_cores: 2
+proxmox_vm_default_memory: 2048
+proxmox_vm_default_onboot: true
+
+# VM definitions. Declared in inventory (inventory/group_vars/proxmox.yaml).
+# Supported keys per entry:
+#   name (required)      VM name, also becomes the guest hostname via cloud-init
+#   vmid (required)      Proxmox VM id
+#   ip                   static IP in CIDR notation (e.g. 172.17.0.100/16);
+#                        omit for DHCP
+#   gateway              default gateway (only with static ip)
+#   cores, memory        resource overrides
+#   disk_size            grow the root disk (e.g. 64G); omit to keep template size
+#   onboot               start VM on node boot
+proxmox_vms: []

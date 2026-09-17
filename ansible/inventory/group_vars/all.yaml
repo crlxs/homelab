@@ -1,10 +1,5 @@
 # Variables shared across the whole inventory.
 
-# User created by cloud-init inside guest VMs and used by Ansible over SSH.
+# User baked into the golden image and used by Ansible over SSH on guest VMs.
 ansible_user_name: ansible
-ansible_user_public_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/ansible.pub') }}"
 ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/ansible' }}"
-
-# DNS servers configured on provisioned guests (Technitium on the pi).
-homelab_dns_servers:
-  - 8.8.8.8

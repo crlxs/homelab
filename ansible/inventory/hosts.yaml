@@ -7,7 +7,10 @@ all:
           ansible_user: ansible
           ansible_become: true
 
-    # Guest VMs are added dynamically by playbooks/00-provision-vms.yaml (add_host into the "provisioned_vms" group). Add static entries here once VMs are permanent and you want to manage them directly, e.g.:
+    # Guest VMs with a static ip in proxmox_vms are added dynamically by
+    # playbooks/00-provision-vms.yaml (add_host into the "provisioned_vms"
+    # group). Add static entries here once VMs are permanent and you want to
+    # manage them directly, e.g.:
     #
     # vms:
     #   hosts:

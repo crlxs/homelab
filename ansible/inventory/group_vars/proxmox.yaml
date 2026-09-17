@@ -3,19 +3,14 @@
 #   - an ansible-vault encrypted file (inventory/group_vars/proxmox/vault.yaml), or
 #   - the PROXMOX_TOKEN_SECRET environment variable.
 proxmox_api_host: 192.168.1.100
-proxmox_api_user: ansible@pve #create a dedicated user in the proxmox UI
+proxmox_api_user: ansible@pve # create a dedicated user in the proxmox UI
 proxmox_api_token_id: ansible
 proxmox_api_token_secret: "{{ vault_proxmox_api_token_secret | default(lookup('env', 'PROXMOX_TOKEN_SECRET')) }}"
 proxmox_node: pve
 proxmox_validate_certs: false
 
-# Storage / network defaults.
-proxmox_storage: local-lvm
-proxmox_cloud_image_storage: local
-proxmox_bridge: vmbr0
-
-# VM definitions provisioned by playbooks/10-provision-vms.yaml.
-proxmox_vms: []
+# VM definitions provisioned by playbooks/00-provision-vms.yaml.
+# See roles/proxmox_vm/defaults/main.yaml for the supported keys and defaults.
 proxmox_vms:
   - name: test
     vmid: 110

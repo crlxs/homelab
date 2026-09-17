@@ -1,34 +1,34 @@
-- name: Provision homelab VMs
+- name: Provision homelab VMs from the golden image template
   hosts: proxmox
   gather_facts: false
 
   roles:
     - role: proxmox_vm
-      vars:
-        proxmox_vm_definitions: "{{ proxmox_vms }}"
 
-#   post_tasks:
-#     - name: Add provisioned VMs to the in-memory inventory
-#       ansible.builtin.add_host:
-#         name: "{{ item.name }}"
-#         groups: provisioned_vms
-#         ansible_host: "{{ item.ip | split('/') | first }}"
-#         ansible_user: "{{ ansible_user_name }}"
-#         ansible_ssh_private_key_file: "{{ ansible_private_key_file }}"
-#         ansible_become: true
-#       loop: "{{ proxmox_vms }}"
-#       loop_control:
-#         label: "{{ item.name }}"
-#       changed_when: false
-#
-# - name: Wait for cloud-init SSH access on provisioned VMs
-#   hosts: provisioned_vms
-#   gather_facts: false
-#   become: false
-#
-#   tasks:
-#     - name: Wait for SSH
-#       ansible.builtin.wait_for_connection:
-#         timeout: 600
-#         delay: 10
-#         sleep: 5
+  post_tasks:
+    # Only VMs with a static ip can be reached deterministically; DHCP VMs
+    # must be added to inventory/hosts.yaml manually once their IP is known.
+    - name: Add provisioned VMs to the in-memory inventory
+      ansible.builtin.add_host:
+        name: "{{ item.name }}"
+        groups: provisioned_vms
+        ansible_host: "{{ item.ip | split('/') | first }}"
+        ansible_user: "{{ ansible_user_name }}"
+        ansible_ssh_private_key_file: "{{ ansible_private_key_file }}"
+        ansible_become: true
+      loop: "{{ proxmox_vms | selectattr('ip', 'defined') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      changed_when: false
+
+- name: Wait for SSH access on provisioned VMs
+  hosts: provisioned_vms
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+        delay: 10
+        sleep: 5
