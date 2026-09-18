@@ -32,6 +32,7 @@ is created manually and must contain:
 - a cloud-init drive attached (`ide2: <storage>:cloudinit`)
 - the `ansible` user with the SSH public key baked in and NOPASSWD sudo
 - root disk on `scsi0` (the role's disk resize targets `scsi0`)
+- cloud-init drive
 - run `cloud-init clean` inside the VM before converting it to a template, so
   clones re-run cloud-init on first boot (this is what applies the per-VM
   hostname and IP configuration)
@@ -39,6 +40,20 @@ is created manually and must contain:
 Proxmox passes each clone's VM name to cloud-init as the hostname, and the
 role sets `ipconfig0` (static IP/gateway or DHCP) per VM, so no SSH access is
 needed during provisioning.
+
+Cloud init install steps:
+
+```
+apt install -y cloud-init cloud-initramfs-growroot
+systemctl enable cloud-init-local
+systemctl enable cloud-init
+systemctl enable cloud-config
+systemctl enable cloud-final
+truncate -s 0 /etc/machine-id
+rm -f /var/lib/dbus/machine-id
+ln -s /etc/machine-id /var/lib/dbus/machine-id
+cloud-init clean --logs --seed
+```
 
 ## Proxmox node requirements
 

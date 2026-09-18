@@ -11,6 +11,8 @@ proxmox_vm_full_clone: true
 proxmox_vm_default_cores: 2
 proxmox_vm_default_memory: 2048
 proxmox_vm_default_onboot: true
+# proxmox_vm_nameservers:
+# proxmox_vm_searchdomains:
 
 # VM definitions. Declared in inventory (inventory/group_vars/proxmox.yaml).
 # Supported keys per entry:

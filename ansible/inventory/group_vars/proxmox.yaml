@@ -14,8 +14,8 @@ proxmox_validate_certs: false
 proxmox_vms:
   - name: test
     vmid: 110
-    # ip: 172.17.0.100/16
-    # gateway: 172.17.0.254
+    ip: 192.168.1.169/24
+    gateway: 192.168.1.1
     cores: 2
     memory: 2048
     # disk_size: 64G

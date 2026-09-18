@@ -1,69 +1,76 @@
 # Provisions a single VM (loop_var: vm) by cloning the golden image template.
 # Idempotent: the clone is skipped if a VM with the same name already exists.
+- block:
+  - name: "{{ vm.name }} | Clone golden image template"
+    community.proxmox.proxmox_kvm:
+      node: "{{ proxmox_node }}"
+      # Source template: identified by vmid, "clone" only needs a value to
+      # trigger clone mode when the source vmid is given.
+      vmid: "{{ proxmox_vm_template_vmid }}"
+      clone: golden-image
+      # New VM:
+      newid: "{{ vm.vmid }}"
+      name: "{{ vm.name }}"
+      full: "{{ proxmox_vm_full_clone }}"
+      timeout: 600
+      state: present
+    delegate_to: localhost
 
-- name: "{{ vm.name }} | Clone golden image template"
-  community.proxmox.proxmox_kvm:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    validate_certs: "{{ proxmox_validate_certs }}"
-    node: "{{ proxmox_node }}"
-    # Source template: identified by vmid, "clone" only needs a value to
-    # trigger clone mode when the source vmid is given.
-    vmid: "{{ proxmox_vm_template_vmid }}"
-    clone: golden-image
-    # New VM:
-    newid: "{{ vm.vmid }}"
-    name: "{{ vm.name }}"
-    full: "{{ proxmox_vm_full_clone }}"
-    timeout: 600
-    state: present
-  delegate_to: localhost
+  - name: "{{ vm.name }} | Apply VM configuration (resources + cloud-init network)"
+    community.proxmox.proxmox_kvm:
+      node: "{{ proxmox_node }}"
+      vmid: "{{ vm.vmid }}"
+      name: "{{ vm.name }}"
+      cores: "{{ vm.cores | default(proxmox_vm_default_cores) }}"
+      memory: "{{ vm.memory | default(proxmox_vm_default_memory) }}"
+      onboot: "{{ vm.onboot | default(proxmox_vm_default_onboot) }}"
+      # Proxmox passes the VM name to cloud-init as the hostname; the network
+      # config below is applied by cloud-init on first boot.
+      ipconfig:
+        ipconfig0: "{{ 'ip=' ~ vm.ip ~ (',gw=' ~ vm.gateway if vm.gateway is defined else '') if vm.ip is defined else 'ip=dhcp' }}"
+      update: true
+      state: present
+    delegate_to: localhost
 
-- name: "{{ vm.name }} | Apply VM configuration (resources + cloud-init network)"
-  community.proxmox.proxmox_kvm:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    validate_certs: "{{ proxmox_validate_certs }}"
-    node: "{{ proxmox_node }}"
-    vmid: "{{ vm.vmid }}"
-    name: "{{ vm.name }}"
-    cores: "{{ vm.cores | default(proxmox_vm_default_cores) }}"
-    memory: "{{ vm.memory | default(proxmox_vm_default_memory) }}"
-    onboot: "{{ vm.onboot | default(proxmox_vm_default_onboot) }}"
-    # Proxmox passes the VM name to cloud-init as the hostname; the network
-    # config below is applied by cloud-init on first boot.
-    ipconfig:
-      ipconfig0: "{{ 'ip=' ~ vm.ip ~ (',gw=' ~ vm.gateway if vm.gateway is defined else '') if vm.ip is defined else 'ip=dhcp' }}"
-    update: true
-    state: present
-  delegate_to: localhost
+  - name: "{{ vm.name }} | Grow root disk"
+    community.proxmox.proxmox_disk:
+      vmid: "{{ vm.vmid }}"
+      disk: scsi0
+      size: "{{ vm.disk_size }}"
+      state: resized
+    when: vm.disk_size is defined
+    delegate_to: localhost
 
-- name: "{{ vm.name }} | Grow root disk"
-  community.proxmox.proxmox_disk:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    validate_certs: "{{ proxmox_validate_certs }}"
-    vmid: "{{ vm.vmid }}"
-    disk: scsi0
-    size: "{{ vm.disk_size }}"
-    state: resized
-  when: vm.disk_size is defined
-  delegate_to: localhost
+  - name: "{{ vm.name }} | Start VM"
+    community.proxmox.proxmox_kvm:
+      node: "{{ proxmox_node }}"
+      vmid: "{{ vm.vmid }}"
+      state: started
+    delegate_to: localhost
 
-- name: "{{ vm.name }} | Start VM"
-  community.proxmox.proxmox_kvm:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_token_id }}"
-    api_token_secret: "{{ proxmox_api_token_secret }}"
-    validate_certs: "{{ proxmox_validate_certs }}"
-    node: "{{ proxmox_node }}"
-    vmid: "{{ vm.vmid }}"
-    state: started
-  delegate_to: localhost
+# --- Added: Wait for SSH and fix DNS immediately --
+  - name: "{{ vm.name }} | Wait for SSH connection"
+    ansible.builtin.wait_for_connection:
+      timeout: 600
+      delay: 10
+      sleep: 5
+    delegate_to: "{{ vm.ip | split('/') | first }}"
+
+  - name: "{{ vm.name }} | Ensure correct DNS nameservers are set"
+    ansible.builtin.template:
+      src: resolv.conf.j2
+      dest: /etc/resolv.conf
+      owner: root
+      group: root
+      mode: '0644'
+    delegate_to: "{{ vm.ip | split('/') | first }}"
+    become: true
+    when: vm.ip is defined
+
+  module_defaults:
+    group/community.proxmox.proxmox:
+      api_host: "{{ proxmox_api_host }}"
+      api_user: "{{ proxmox_api_user }}"
+      api_token_id: "{{ proxmox_api_token_id }}"
+      api_token_secret: "{{ proxmox_api_token_secret }}"
+      validate_certs: "{{ proxmox_validate_certs }}"
