@@ -20,3 +20,12 @@ proxmox_vms:
     memory: 2048
     disk_size: 32G
     onboot: true
+
+  - name: shiet
+    vmid: 111
+    ip: 192.168.1.170/24
+    gateway: 192.168.1.1
+    cores: 4
+    memory: 4096
+    #disk_size: 32G
+    onboot: true

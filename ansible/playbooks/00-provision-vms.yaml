@@ -18,29 +18,3 @@
       loop_control:
         label: "{{ item.name }}"
       changed_when: false
-
-# - name: Wait for SSH access on provisioned VMs
-#   hosts: provisioned_vms
-#   gather_facts: false
-#   become: false
-#
-#   tasks:
-#     - name: Wait for SSH
-#       ansible.builtin.wait_for_connection:
-#         timeout: 600
-#         delay: 10
-#         sleep: 5
-
-# - name: Configure DNS on provisioned VMs
-#   hosts: provisioned_vms
-#   gather_facts: false
-#   become: true
-#
-#   tasks:
-#     - name: Ensure correct DNS nameservers are set
-#       ansible.builtin.template:
-#         src: ../roles/proxmox_vm/templates/resolv.conf.j2
-#         dest: /etc/resolv.conf
-#         owner: root
-#         group: root
-#         mode: '0644'
