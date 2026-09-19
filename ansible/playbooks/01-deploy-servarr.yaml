@@ -1,0 +1,8 @@
+- name: Configure Servarr VM (Docker + Servarr docker compose)
+  hosts: servarr
+  gather_facts: true
+
+  roles:
+    - role: docker
+
+  # post_tasks:

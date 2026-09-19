@@ -11,6 +11,8 @@ proxmox_validate_certs: false
 
 # VM definitions provisioned by playbooks/00-provision-vms.yaml.
 # See roles/proxmox_vm/defaults/main.yaml for the supported keys and defaults.
+# 
+# Dont forget to add the VMs to hosts.yaml, its not the best approach but works.
 proxmox_vms:
   - name: test
     vmid: 110
@@ -24,6 +26,15 @@ proxmox_vms:
   - name: shiet
     vmid: 111
     ip: 192.168.1.170/24
+    gateway: 192.168.1.1
+    cores: 4
+    memory: 4096
+    #disk_size: 32G
+    onboot: true
+
+  - name: servarr
+    vmid: 120
+    ip: 192.168.1.200/24
     gateway: 192.168.1.1
     cores: 4
     memory: 4096

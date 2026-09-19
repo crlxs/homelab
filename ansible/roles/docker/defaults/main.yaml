@@ -3,7 +3,10 @@ docker_apt_keyring: /etc/apt/keyrings/docker.asc
 docker_apt_repository_file: docker
 
 docker_apt_prerequisites:
+  - apt-transport-https
   - ca-certificates
+  - curl
+  - gnupg
 
 docker_packages:
   - docker-ce

@@ -18,3 +18,11 @@ all:
     #       ansible_host: 172.17.0.100
     #       ansible_user: ansible
     #       ansible_become: true
+
+    proxmox_vms:
+      hosts:
+        servarr:
+          ansible_host: 192.168.1.200
+          ansible_become: true
+        # hermes:
+        #   ansible_host:
