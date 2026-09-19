@@ -40,6 +40,7 @@
       state: resized
     when: vm.disk_size is defined
     delegate_to: localhost
+    register: root_disk_resize
 
   - name: "{{ vm.name }} | Start VM"
     community.proxmox.proxmox_kvm:
@@ -66,6 +67,24 @@
     delegate_to: "{{ vm.ip | split('/') | first }}"
     become: true
     when: vm.ip is defined
+
+  - name: "{{ vm.name }} | Resize guest partition and filesystem"
+    ansible.builtin.shell: |
+      # Expand the partition to fill the newly grown disk space
+      root_part=$(findmnt -n -o SOURCE /)
+      disk_dev=$(lsblk -no pkname "$root_part")
+      part_num=$(echo "$root_part" | grep -o '[0-9]*$')
+
+      # Grow partition using cloud-utils (growpart) or parted
+      growpart "/dev/$disk_dev" "$part_num" || true
+
+      # Resize the ext4/xfs filesystem to fill the partition
+      resize2fs "$root_part"
+    delegate_to: "{{ vm.ip | split('/') | first }}"
+    become: true
+    when: 
+      - vm.ip is defined
+      - root_disk_resize.changed
 
   module_defaults:
     group/community.proxmox.proxmox:
