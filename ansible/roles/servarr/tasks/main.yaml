@@ -1,13 +1,44 @@
-- name: Ensure configuration directory exists
-  ansible.builtin.assert:
-    that:
-      - ansible_facts.os_family == "Debian"
-      - ansible_facts.distribution == "Debian"
-    fail_msg: "The docker role currently supports Debian only."
+- name: Pause and wait for manual disk configuration verification
+  ansible.builtin.pause:
+    prompt: |
+      ---------------------------------------------------------
+      Please verify that the media disk is fully configured
+      and mounted on the VM.
 
-- name: Ensure media directory exists
-  ansible.builtin.apt:
-    name: "{{ docker_apt_prerequisites }}"
-    state: present
-    update_cache: true
+      Press [Enter] to continue, or Ctrl+C then 'c' to cancel.
+      ---------------------------------------------------------
 
+- name: Ensure media disk is indeed present in the VM
+  ansible.builtin.wait_for:
+    path: "{{ media_disk }}"
+    timeout: 30
+
+- name: Format filesystem on the media disk
+  ansible.builtin.filesystem:
+    fstype: ext4
+    dev: "{{ media_disk }}"
+    force: false
+
+- name: Create media directory
+  ansible.builtin.file:
+    path: "{{ media_dir }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: "0755"
+
+- name: Mount media directory and make permanent through /etc/fstab
+  ansible.builtin.mount:
+    path: "{{ media_dir }}"
+    src: "{{ media_disk }}"
+    fstype: ext4
+    opts: default
+    state: mounted
+
+- name: Ensure config directory exists
+  ansible.builtin.file:
+    path: "{{ servarr_conf_dir }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: "0755"

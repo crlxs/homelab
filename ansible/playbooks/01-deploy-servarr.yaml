@@ -2,7 +2,14 @@
   hosts: servarr
   gather_facts: true
 
+  vars_prompt:
+    - name: media_disk
+      prompt: "Enter the target media disk device to format and mount (e.g., /dev/sdb)"
+      private: false
+      default: "/dev/sdb"
+
   roles:
     - role: docker
+    - role: servarr
 
   # post_tasks:
