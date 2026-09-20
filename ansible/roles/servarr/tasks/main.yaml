@@ -1,0 +1,13 @@
+- name: Ensure configuration directory exists
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == "Debian"
+      - ansible_facts.distribution == "Debian"
+    fail_msg: "The docker role currently supports Debian only."
+
+- name: Ensure media directory exists
+  ansible.builtin.apt:
+    name: "{{ docker_apt_prerequisites }}"
+    state: present
+    update_cache: true
+

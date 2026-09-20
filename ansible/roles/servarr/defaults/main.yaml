@@ -1,1 +1,5 @@
-
+servarr_puid:
+servarr_pgid:
+servarr_conf_dir:
+media_dir:
+timezone:

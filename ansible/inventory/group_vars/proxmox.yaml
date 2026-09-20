@@ -20,7 +20,7 @@ proxmox_vms:
     gateway: 192.168.1.1
     cores: 2
     memory: 2048
-    disk_size: 32G
+    root_disk_size: 32G
     onboot: true
 
   - name: shiet
@@ -29,7 +29,7 @@ proxmox_vms:
     gateway: 192.168.1.1
     cores: 4
     memory: 4096
-    #disk_size: 32G
+    #root_disk_size: 32G
     onboot: true
 
   - name: servarr
@@ -38,5 +38,5 @@ proxmox_vms:
     gateway: 192.168.1.1
     cores: 4
     memory: 4096
-    #disk_size: 32G
+    #root_disk_size: 32G
     onboot: true
