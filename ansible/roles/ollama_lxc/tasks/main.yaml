@@ -1,3 +1,17 @@
 - name: Identify NVIDIA GPU device numbers (https://proxmenux.com/en/guides/nvidia-manual/#:~:text=5%2E%20Configure%20an%20LXC%20container%20to%20use%20the%20GPU)
 
 - name: Create LXC from Debian 13 template or edit LXC config
+
+
+```
+apt update && apt upgrade -y
+apt install curl zstd -y
+```
+
+```
+mkdir -p /opt/nvidia
+cd /opt/nvidia/
+wget https://download.nvidia.com/XFree86/Linux-x86_64/615.71.09/NVIDIA-Linux-x86_64-615.71.09.run
+chmod +x NVIDIA-Linux-x86_64-615.71.09.run 
+./NVIDIA-Linux-x86_64-615.71.09.run --no-kernel-module
+```
