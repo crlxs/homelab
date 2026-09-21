@@ -103,9 +103,16 @@ node is also kept in the inventory for node-level management tasks.
 
 ### 3. Add ZFS media-pool setup for servarr media files 
 
+This will change as the setup evolves, at the time of writing this
+my Proxmox node simply has 2 500GB HDDs which I have made into a striped
+ZFS pool since I dont care about loosing media files like movies. Just
+make sure the storage pool exists and the disk is added to the servarr
+VM, the playbook will prompt you either way to make sure.
+
 ### 4. Add ZFS hermes dedicated SSD
 
-This is a single SSD exclusively dedicated for the hermes VM.
+Same as point 3, currently this is a single SSD exclusively dedicated
+for the hermes VM, but the setup might change as time goes on.
 
 ### 5. Proxmox GPU drivers for sharing to ollama/jellyfinn LXCs
 
