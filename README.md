@@ -5,6 +5,14 @@ created manually on the Proxmox node (with users, SSH keys and base packages
 baked in), and Ansible only clones it, applies per-VM configuration
 (resources, network via cloud-init) and starts the VMs.
 
+Steps to deploy the whole homelab stack:
+
+1. Proxmox node setup + Golden VM template as per the requirements below.
+2. Setups variables in ansible/inventory/hosts.yaml & ansible/inventory/group_vars/proxmox.yaml
+3. Control node (where you run the playbook from) setup as per the requirements below.
+4. Run 00-provision-vms.yaml playbook
+5. 
+
 ## Layout
 
 ```
@@ -92,6 +100,14 @@ node is also kept in the inventory for node-level management tasks.
     ```
     ssh ansible@192.168.1.100 -i $SSH_KEY_NAME
     ```
+
+### 3. Add ZFS media-pool setup for servarr media files 
+
+### 4. Add ZFS hermes dedicated SSD
+
+This is a single SSD exclusively dedicated for the hermes VM.
+
+### 5. Proxmox GPU drivers for sharing to ollama/jellyfinn LXCs
 
 ## Golden image prerequisites
 
