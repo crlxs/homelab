@@ -138,23 +138,16 @@ for the hermes VM, but the setup might change as time goes on.
     lsmod | grep nouveau
     ```
 
-4. Enable non-free repositories and install the drivers
+4. Enable non-free repositories.
 
     
     Edit file /etc/apt/sources.list.d/debian.sources and
     make sure the repositories contain both non-free and
     non-free-firmware
 
-    ```
-    apt update
-    apt install nvidia-driver firmware-misc-nonfree nvidia-smi
-    ```
+5. Follow https://proxmenux.com/en/guides/nvidia-manual/
 
-5. Verify installation
-
-    ```
-    nvidia-smi
-    ```
+    For my current 3060 Ti NVIDIA driver 615.71.09 works.
 
 ## Golden image prerequisites
 
