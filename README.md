@@ -23,40 +23,6 @@ ansible/
     └── docker/                       # install Docker engine on Debian guests
 ```
 
-## Golden image prerequisites
-
-The template (default vmid `9000`, see `roles/proxmox_vm/defaults/main.yaml`)
-is created manually and must contain:
-
-- `cloud-init` and `qemu-guest-agent` packages installed
-- a cloud-init drive attached (`ide2: <storage>:cloudinit`)
-- the `ansible` user with the SSH public key baked in and NOPASSWD sudo
-- root disk on `scsi0` (the role's disk resize targets `scsi0`)
-- cloud-init drive
-- run `cloud-init clean` inside the VM before converting it to a template, so
-  clones re-run cloud-init on first boot (this is what applies the per-VM
-  hostname and IP configuration)
-- **GPT partition table and no swap partition** so the proxmox_vm role can grow the
-  partition if you change the disk size from the default. Enable swapfile
-
-Proxmox passes each clone's VM name to cloud-init as the hostname, and the
-role sets `ipconfig0` (static IP/gateway or DHCP) per VM, so no SSH access is
-needed during provisioning.
-
-Cloud init install steps:
-
-```
-apt install -y cloud-init cloud-initramfs-growroot
-systemctl enable cloud-init-local
-systemctl enable cloud-init
-systemctl enable cloud-config
-systemctl enable cloud-final
-truncate -s 0 /etc/machine-id
-rm -f /var/lib/dbus/machine-id
-ln -s /etc/machine-id /var/lib/dbus/machine-id
-cloud-init clean --logs --seed
-```
-
 ## Proxmox node requirements
 
 Provisioning talks to the Proxmox API (no SSH needed for cloning), but the
@@ -126,6 +92,40 @@ node is also kept in the inventory for node-level management tasks.
     ```
     ssh ansible@192.168.1.100 -i $SSH_KEY_NAME
     ```
+
+## Golden image prerequisites
+
+The template (default vmid `9000`, see `roles/proxmox_vm/defaults/main.yaml`)
+is created manually and must contain:
+
+- `cloud-init` and `qemu-guest-agent` packages installed
+- a cloud-init drive attached (`ide2: <storage>:cloudinit`)
+- the `ansible` user with the SSH public key baked in and NOPASSWD sudo
+- root disk on `scsi0` (the role's disk resize targets `scsi0`)
+- cloud-init drive
+- run `cloud-init clean` inside the VM before converting it to a template, so
+  clones re-run cloud-init on first boot (this is what applies the per-VM
+  hostname and IP configuration)
+- **GPT partition table and no swap partition** so the proxmox_vm role can grow the
+  partition if you change the disk size from the default. Enable swapfile
+
+Proxmox passes each clone's VM name to cloud-init as the hostname, and the
+role sets `ipconfig0` (static IP/gateway or DHCP) per VM, so no SSH access is
+needed during provisioning.
+
+Cloud init install steps:
+
+```
+apt install -y cloud-init cloud-initramfs-growroot
+systemctl enable cloud-init-local
+systemctl enable cloud-init
+systemctl enable cloud-config
+systemctl enable cloud-final
+truncate -s 0 /etc/machine-id
+rm -f /var/lib/dbus/machine-id
+ln -s /etc/machine-id /var/lib/dbus/machine-id
+cloud-init clean --logs --seed
+```
 
 ## Ansible control node requirements (where you run the playbook from)
 
