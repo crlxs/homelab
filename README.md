@@ -114,7 +114,47 @@ VM, the playbook will prompt you either way to make sure.
 Same as point 3, currently this is a single SSD exclusively dedicated
 for the hermes VM, but the setup might change as time goes on.
 
-### 5. Proxmox GPU drivers for sharing to ollama/jellyfinn LXCs
+### 5. Proxmox NVIDIA GPU drivers for sharing to ollama/jellyfinn LXCs
+
+1. Blacklist NVIDIA nouveau Driver so it doesn't conflict
+
+    ```
+    cat << 'EOF' > /etc/modprobe.d/blacklist-nouveau.conf
+    blacklist nouveau
+    options nouveau modeset=0
+    EOF
+    ```
+
+2. Update initramfs and reboot:
+
+    ```
+    update-initramfs -u
+    reboot
+    ```
+
+3. Confirm after reboot (lsmod should return nothing)
+
+    ```
+    lsmod | grep nouveau
+    ```
+
+4. Enable non-free repositories and install the drivers
+
+    
+    Edit file /etc/apt/sources.list.d/debian.sources and
+    make sure the repositories contain both non-free and
+    non-free-firmware
+
+    ```
+    apt update
+    apt install nvidia-driver firmware-misc-nonfree nvidia-smi
+    ```
+
+5. Verify installation
+
+    ```
+    nvidia-smi
+    ```
 
 ## Golden image prerequisites
 
