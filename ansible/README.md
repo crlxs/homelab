@@ -36,8 +36,8 @@ is created manually and must contain:
 - run `cloud-init clean` inside the VM before converting it to a template, so
   clones re-run cloud-init on first boot (this is what applies the per-VM
   hostname and IP configuration)
-- no swap partition so the proxmox_vm role can grow the partition if you change
-  the disk size from the default. Enable swapfile
+- **GPT partition table and no swap partition** so the proxmox_vm role can grow the
+  partition if you change the disk size from the default. Enable swapfile
 
 Proxmox passes each clone's VM name to cloud-init as the hostname, and the
 role sets `ipconfig0` (static IP/gateway or DHCP) per VM, so no SSH access is
