@@ -14,24 +14,15 @@ proxmox_validate_certs: false
 # 
 # Dont forget to add the VMs to hosts.yaml, its not the best approach but works.
 proxmox_vms:
-  - name: test
-    vmid: 110
-    ip: 192.168.1.169/24
-    gateway: 192.168.1.1
-    cores: 2
-    memory: 2048
-    root_disk_size: 32G
-    onboot: true
-
-  - name: shiet
-    vmid: 111
-    ip: 192.168.1.170/24
-    gateway: 192.168.1.1
-    cores: 4
-    memory: 4096
-    #root_disk_size: 32G
-    onboot: true
-
+  # - name: shiet
+  #   vmid: 111
+  #   ip: 192.168.1.170/24
+  #   gateway: 192.168.1.1
+  #   cores: 4
+  #   memory: 4096
+  #   #root_disk_size: 32G
+  #   onboot: true
+  #
   - name: servarr
     vmid: 120
     ip: 192.168.1.200/24

@@ -32,7 +32,7 @@
     path: "{{ media_dir }}"
     src: "{{ media_disk }}"
     fstype: ext4
-    opts: default
+    opts: defaults
     state: mounted
 
 - name: Ensure config directory exists

@@ -1,5 +1,5 @@
-servarr_puid:
-servarr_pgid:
-servarr_conf_dir:
-media_dir:
-timezone:
+servarr_user: 1000
+servarr_group: 1000
+servarr_conf_dir: /opt/servarr
+media_dir: /opt/media
+# timezone:
