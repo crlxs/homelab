@@ -11,6 +11,11 @@ services:
     ports:
       - 9696:9696
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:9696/ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
   
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -25,6 +30,11 @@ services:
     ports:
       - 7878:7878
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:7878/ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -39,6 +49,33 @@ services:
     ports:
       - 8989:8989
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8989/ping || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  servarr-bootstrap:
+    image: alpine:3.21
+    container_name: servarr-bootstrap
+    depends_on:
+      prowlarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    environment:
+      SERVARR_UI_USERNAME: "{{ servarr_ui_username }}"
+    entrypoint: ["/bin/sh", "/bootstrap-servarr.sh"]
+    volumes:
+      - {{ servarr_conf_dir }}/bootstrap-servarr.sh:/bootstrap-servarr.sh:ro
+      - {{ servarr_conf_dir }}/prowlarr:/config/prowlarr:ro
+      - {{ servarr_conf_dir }}/radarr:/config/radarr:ro
+      - {{ servarr_conf_dir }}/sonarr:/config/sonarr:ro
+    secrets:
+      - servarr_ui_password
+    restart: "no"
 
 #  lidarr:
 #    image: lscr.io/linuxserver/lidarr:latest
@@ -82,6 +119,10 @@ services:
       - /dev/kmsg
     restart: unless-stopped
     privileged: true # Often required on modern kernels to access cgroup data
+
+secrets:
+  servarr_ui_password:
+    file: "{{ servarr_conf_dir }}/secrets/ui_password"
 
    # Add as a sidecar to radarr to export specific radarr info like movies, etc. 
 #  radarr-exporter:

@@ -7,6 +7,10 @@
       prompt: "Enter the target media disk device to format and mount (e.g., /dev/sdb)"
       private: false
       default: "/dev/sdb"
+    - name: servarr_ui_password
+      prompt: "Enter the password for the Servarr UI user"
+      private: true
+      confirm: true
 
   roles:
     - role: docker

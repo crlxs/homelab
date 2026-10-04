@@ -3,3 +3,6 @@ servarr_group: 1000
 servarr_conf_dir: /opt/servarr
 media_dir: /opt/media
 timezone: Etc/UTC
+servarr_ui_username: admin
+# Provided interactively by playbooks/01-deploy-servarr.yaml.
+servarr_ui_password: ""

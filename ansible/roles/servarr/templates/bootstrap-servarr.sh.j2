@@ -1,0 +1,92 @@
+#!/bin/sh
+set -eu
+
+apk add --no-cache curl jq >/dev/null
+password="$(cat /run/secrets/servarr_ui_password)"
+
+api_key() {
+  config_dir="$1"
+
+  while :; do
+    key="$(sed -n 's|.*<ApiKey>\([^<]*\)</ApiKey>.*|\1|p' "$config_dir/config.xml" 2>/dev/null || true)"
+    if [ -n "$key" ]; then
+      printf '%s' "$key"
+      return
+    fi
+
+    sleep 2
+  done
+}
+
+configure_auth() {
+  url="$1"
+  version="$2"
+  key="$3"
+  config="$(curl -fsS -H "X-Api-Key: $key" "$url/api/$version/config/host")"
+  username="$(printf '%s' "$config" | jq -r '.username // empty')"
+
+  if [ -n "$username" ]; then
+    return
+  fi
+
+  updated="$(printf '%s' "$config" | jq \
+    --arg username "$SERVARR_UI_USERNAME" \
+    --arg password "$password" \
+    '.authenticationMethod = "forms" | .authenticationRequired = "enabled" |
+     .username = $username | .password = $password | .passwordConfirmation = $password')"
+  id="$(printf '%s' "$config" | jq -r '.id')"
+
+  curl -fsS -X PUT \
+    -H "Content-Type: application/json" \
+    -H "X-Api-Key: $key" \
+    --data "$updated" \
+    "$url/api/$version/config/host/$id" >/dev/null
+}
+
+register_application() {
+  name="$1"
+  implementation="$2"
+  contract="$3"
+  base_url="$4"
+  app_key="$5"
+  categories="$6"
+  existing="$(curl -fsS -H "X-Api-Key: $prowlarr_key" http://prowlarr:9696/api/v1/applications)"
+
+  if printf '%s' "$existing" | jq -e \
+    --arg implementation "$implementation" \
+    --arg base_url "$base_url" \
+    'any(.[]; .implementation == $implementation and any(.fields[]?; .name == "baseUrl" and .value == $base_url))' >/dev/null; then
+    return
+  fi
+
+  payload="$(jq -n \
+    --arg name "$name" \
+    --arg implementation "$implementation" \
+    --arg contract "$contract" \
+    --arg base_url "$base_url" \
+    --arg api_key "$app_key" \
+    --argjson categories "$categories" \
+    '{name: $name, implementation: $implementation, configContract: $contract, syncLevel: "fullSync", fields: [
+      {name: "prowlarrUrl", value: "http://prowlarr:9696"},
+      {name: "baseUrl", value: $base_url},
+      {name: "apiKey", value: $api_key},
+      {name: "syncCategories", value: $categories}
+    ]}')"
+
+  curl -fsS -X POST \
+    -H "Content-Type: application/json" \
+    -H "X-Api-Key: $prowlarr_key" \
+    --data "$payload" \
+    http://prowlarr:9696/api/v1/applications >/dev/null
+}
+
+prowlarr_key="$(api_key /config/prowlarr)"
+radarr_key="$(api_key /config/radarr)"
+sonarr_key="$(api_key /config/sonarr)"
+
+configure_auth http://prowlarr:9696 v1 "$prowlarr_key"
+configure_auth http://radarr:7878 v3 "$radarr_key"
+configure_auth http://sonarr:8989 v3 "$sonarr_key"
+
+register_application Radarr Radarr RadarrSettings http://radarr:7878 "$radarr_key" '[2000,2010,2020,2030,2040,2045,2050,2060]'
+register_application Sonarr Sonarr SonarrSettings http://sonarr:8989 "$sonarr_key" '[5000,5010,5020,5030,5040,5045,5050,5060]'

@@ -43,6 +43,37 @@
     group: "{{ servarr_group }}"
     mode: "0755"
 
+- name: Require a Servarr UI password
+  ansible.builtin.assert:
+    that: servarr_ui_password | length > 0
+    fail_msg: Define servarr_ui_password before deploying the Servarr stack.
+  no_log: true
+
+- name: Create Compose secrets directory
+  ansible.builtin.file:
+    path: "{{ servarr_conf_dir }}/secrets"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Install Servarr UI password secret
+  ansible.builtin.copy:
+    content: "{{ servarr_ui_password }}\n"
+    dest: "{{ servarr_conf_dir }}/secrets/ui_password"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Install Servarr bootstrap script
+  ansible.builtin.template:
+    src: bootstrap-servarr.sh.j2
+    dest: "{{ servarr_conf_dir }}/bootstrap-servarr.sh"
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Install Servarr Docker Compose definition
   ansible.builtin.template:
     src: docker-compose.yaml.j2
