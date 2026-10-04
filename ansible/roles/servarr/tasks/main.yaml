@@ -42,3 +42,11 @@
     owner: "{{ servarr_user }}"
     group: "{{ servarr_group }}"
     mode: "0755"
+
+- name: Install Servarr Docker Compose definition
+  ansible.builtin.template:
+    src: docker-compose.yaml.j2
+    dest: "{{ servarr_conf_dir }}/docker-compose.yaml"
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: "0644"
