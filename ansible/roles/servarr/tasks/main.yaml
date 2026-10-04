@@ -8,6 +8,36 @@
       Press [Enter] to continue, or Ctrl+C then 'c' to cancel.
       ---------------------------------------------------------
 
+- name: Ensure media group exists
+  ansible.builtin.group:
+    name: "{{ servarr_group }}"
+    state: present
+    system: true
+
+- name: Ensure media user exists
+  ansible.builtin.user:
+    name: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    state: present
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Gather media account entries
+  ansible.builtin.getent:
+    database: "{{ item.database }}"
+    key: "{{ item.key }}"
+  loop:
+    - database: passwd
+      key: "{{ servarr_user }}"
+    - database: group
+      key: "{{ servarr_group }}"
+
+- name: Record media account IDs for containers
+  ansible.builtin.set_fact:
+    servarr_puid: "{{ getent_passwd[servarr_user][2] }}"
+    servarr_pgid: "{{ getent_group[servarr_group][2] }}"
+
 - name: Ensure media disk is indeed present in the VM
   ansible.builtin.wait_for:
     path: "{{ media_disk }}"
@@ -34,6 +64,33 @@
     fstype: ext4
     opts: defaults
     state: mounted
+
+- name: Set ownership on media contents
+  ansible.builtin.file:
+    path: "{{ media_dir }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    recurse: true
+
+- name: Set group inheritance on mounted media directory
+  ansible.builtin.file:
+    path: "{{ media_dir }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: "2775"
+
+- name: Create media library root folders
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: "2775"
+  loop:
+    - "{{ radarr_root_folder }}"
+    - "{{ sonarr_root_folder }}"
 
 - name: Ensure config directory exists
   ansible.builtin.file:
@@ -81,3 +138,10 @@
     owner: "{{ servarr_user }}"
     group: "{{ servarr_group }}"
     mode: "0644"
+
+- name: Start Servarr Docker Compose project
+  community.docker.docker_compose_v2:
+    project_src: "{{ servarr_conf_dir }}"
+    files:
+      - docker-compose.yaml
+    state: present

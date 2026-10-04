@@ -80,6 +80,25 @@ register_application() {
     http://prowlarr:9696/api/v1/applications >/dev/null
 }
 
+ensure_root_folder() {
+  url="$1"
+  key="$2"
+  path="$3"
+  existing="$(curl -fsS -H "X-Api-Key: $key" "$url/api/v3/rootfolder")"
+
+  if printf '%s' "$existing" | jq -e --arg path "$path" \
+    'any(.[]; .path == $path)' >/dev/null; then
+    return
+  fi
+
+  payload="$(jq -n --arg path "$path" '{path: $path}')"
+  curl -fsS -X POST \
+    -H "Content-Type: application/json" \
+    -H "X-Api-Key: $key" \
+    --data "$payload" \
+    "$url/api/v3/rootfolder" >/dev/null
+}
+
 prowlarr_key="$(api_key /config/prowlarr)"
 radarr_key="$(api_key /config/radarr)"
 sonarr_key="$(api_key /config/sonarr)"
@@ -87,6 +106,9 @@ sonarr_key="$(api_key /config/sonarr)"
 configure_auth http://prowlarr:9696 v1 "$prowlarr_key"
 configure_auth http://radarr:7878 v3 "$radarr_key"
 configure_auth http://sonarr:8989 v3 "$sonarr_key"
+
+ensure_root_folder http://radarr:7878 "$radarr_key" "$RADARR_ROOT_FOLDER"
+ensure_root_folder http://sonarr:8989 "$sonarr_key" "$SONARR_ROOT_FOLDER"
 
 register_application Radarr Radarr RadarrSettings http://radarr:7878 "$radarr_key" '[2000,2010,2020,2030,2040,2045,2050,2060]'
 register_application Sonarr Sonarr SonarrSettings http://sonarr:8989 "$sonarr_key" '[5000,5010,5020,5030,5040,5045,5050,5060]'

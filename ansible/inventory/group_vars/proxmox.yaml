@@ -28,6 +28,6 @@ proxmox_vms:
     ip: 192.168.1.200/24
     gateway: 192.168.1.1
     cores: 4
-    memory: 4096
+    memory: 8192
     #root_disk_size: 32G
     onboot: true

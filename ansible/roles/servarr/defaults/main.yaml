@@ -1,7 +1,9 @@
-servarr_user: 1000
-servarr_group: 1000
+servarr_user: media
+servarr_group: media
 servarr_conf_dir: /opt/servarr
 media_dir: /opt/media
+radarr_root_folder: "{{ media_dir }}/movies"
+sonarr_root_folder: "{{ media_dir }}/tv"
 timezone: Etc/UTC
 servarr_ui_username: admin
 # Provided interactively by playbooks/01-deploy-servarr.yaml.

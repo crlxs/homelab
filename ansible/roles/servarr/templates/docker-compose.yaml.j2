@@ -3,9 +3,10 @@ services:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     environment:
-      - PUID={{ servarr_user }}
-      - PGID={{ servarr_group }}
+      - PUID={{ servarr_puid }}
+      - PGID={{ servarr_pgid }}
       - TZ={{ timezone }}
+      - UMASK=002
     volumes:
       - {{ servarr_conf_dir }}/prowlarr:/config
     ports:
@@ -21,9 +22,10 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     environment:
-      - PUID={{ servarr_user }}
-      - PGID={{ servarr_group }}
+      - PUID={{ servarr_puid }}
+      - PGID={{ servarr_pgid }}
       - TZ={{ timezone }}
+      - UMASK=002
     volumes:
       - {{ servarr_conf_dir }}/radarr:/config
       - {{ media_dir }}:{{ media_dir }} # By making the internal path match the external one we avoid folder errors with SABnzbd.
@@ -40,9 +42,10 @@ services:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
     environment:
-      - PUID={{ servarr_user }}
-      - PGID={{ servarr_group }}
+      - PUID={{ servarr_puid }}
+      - PGID={{ servarr_pgid }}
       - TZ={{ timezone }}
+      - UMASK=002
     volumes:
       - {{ servarr_conf_dir }}/sonarr:/config
       - {{ media_dir }}:{{ media_dir }}
@@ -67,6 +70,8 @@ services:
         condition: service_healthy
     environment:
       SERVARR_UI_USERNAME: "{{ servarr_ui_username }}"
+      RADARR_ROOT_FOLDER: "{{ radarr_root_folder }}"
+      SONARR_ROOT_FOLDER: "{{ sonarr_root_folder }}"
     entrypoint: ["/bin/sh", "/bootstrap-servarr.sh"]
     volumes:
       - {{ servarr_conf_dir }}/bootstrap-servarr.sh:/bootstrap-servarr.sh:ro
@@ -95,8 +100,8 @@ services:
     init: true
     container_name: jellyseerr
     environment:
-      - PUID={{ servarr_user }}
-      - PGID={{ servarr_group }}
+      - PUID={{ servarr_puid }}
+      - PGID={{ servarr_pgid }}
       - TZ={{ timezone }}
     volumes:
       - {{ servarr_conf_dir }}/jellyseerr:/app/config
