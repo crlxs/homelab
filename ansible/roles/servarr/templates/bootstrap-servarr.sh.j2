@@ -2,7 +2,24 @@
 set -eu
 
 apk add --no-cache curl jq >/dev/null
-password="$(cat /run/secrets/servarr_ui_password)"
+bootstrap_input="$(cat)"
+password="$(printf '%s' "$bootstrap_input" | jq -er '.servarr_ui_password')"
+sabnzbd_ui_username="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_ui_username')"
+sabnzbd_ui_password="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_ui_password')"
+sabnzbd_incomplete_dir="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_incomplete_dir')"
+sabnzbd_complete_dir="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_complete_dir')"
+sabnzbd_radarr_category="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_radarr_category')"
+sabnzbd_sonarr_category="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_sonarr_category')"
+sabnzbd_prowlarr_category="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_prowlarr_category')"
+sabnzbd_provider_name="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_name')"
+sabnzbd_provider_host="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_host')"
+sabnzbd_provider_port="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_port')"
+sabnzbd_provider_username="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_username')"
+sabnzbd_provider_password="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_password')"
+sabnzbd_provider_connections="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_connections')"
+sabnzbd_provider_ssl="$(printf '%s' "$bootstrap_input" | jq -er 'if .sabnzbd_provider_ssl then 1 else 0 end')"
+sabnzbd_provider_ssl_verify="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_ssl_verify')"
+sabnzbd_provider_priority="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_priority')"
 
 api_key() {
   config_dir="$1"
@@ -14,6 +31,22 @@ api_key() {
       return
     fi
 
+    sleep 2
+  done
+}
+
+wait_for_url() {
+  url="$1"
+
+  until curl -fsS "$url" >/dev/null; do
+    sleep 2
+  done
+}
+
+wait_for_sabnzbd() {
+  until curl -fsS \
+    --connect-to localhost:8080:sabnzbd:8080 \
+    http://localhost:8080/api?mode=version >/dev/null; do
     sleep 2
   done
 }
@@ -80,6 +113,51 @@ register_application() {
     http://prowlarr:9696/api/v1/applications >/dev/null
 }
 
+register_download_client() {
+  url="$1"
+  version="$2"
+  key="$3"
+  category_field="$4"
+  category="$5"
+  remove_completed_downloads="$6"
+
+  existing="$(curl -fsS -H "X-Api-Key: $key" "$url/api/$version/downloadclient")"
+  if printf '%s' "$existing" | jq -e \
+    'any(.[]; .implementation == "Sabnzbd")' >/dev/null; then
+    return
+  fi
+
+  payload="$(jq -n \
+    --arg category_field "$category_field" \
+    --arg category "$category" \
+    --arg api_key "$sabnzbd_key" \
+    --argjson remove_completed_downloads "$remove_completed_downloads" \
+    '{
+      name: "SABnzbd",
+      enable: true,
+      protocol: "usenet",
+      priority: 1,
+      removeCompletedDownloads: $remove_completed_downloads,
+      removeFailedDownloads: true,
+      implementation: "Sabnzbd",
+      configContract: "SabnzbdSettings",
+      fields: [
+        {name: "host", value: "sabnzbd"},
+        {name: "port", value: 8080},
+        {name: "useSsl", value: false},
+        {name: "urlBase", value: ""},
+        {name: "apiKey", value: $api_key},
+        {name: $category_field, value: $category}
+      ]
+    }')"
+
+  curl -fsS -X POST \
+    -H "Content-Type: application/json" \
+    -H "X-Api-Key: $key" \
+    --data "$payload" \
+    "$url/api/$version/downloadclient" >/dev/null
+}
+
 ensure_root_folder() {
   url="$1"
   key="$2"
@@ -99,9 +177,37 @@ ensure_root_folder() {
     "$url/api/v3/rootfolder" >/dev/null
 }
 
+sabnzbd_api_key() {
+  while :; do
+    key="$(sed -n 's/^api_key = //p' /config/sabnzbd/sabnzbd.ini 2>/dev/null || true)"
+    if [ -n "$key" ]; then
+      printf '%s' "$key"
+      return
+    fi
+
+    sleep 2
+  done
+}
+
+sabnzbd_set_config() {
+  response="$(curl -fsS --get \
+    --connect-to localhost:8080:sabnzbd:8080 \
+    http://localhost:8080/api \
+    --data-urlencode "apikey=$sabnzbd_key" \
+    --data-urlencode "mode=set_config" \
+    "$@")"
+  printf '%s' "$response" | jq -e '.status != false' >/dev/null
+}
+
+wait_for_url http://prowlarr:9696/ping
+wait_for_url http://radarr:7878/ping
+wait_for_url http://sonarr:8989/ping
+wait_for_sabnzbd
+
 prowlarr_key="$(api_key /config/prowlarr)"
 radarr_key="$(api_key /config/radarr)"
 sonarr_key="$(api_key /config/sonarr)"
+sabnzbd_key="$(sabnzbd_api_key)"
 
 configure_auth http://prowlarr:9696 v1 "$prowlarr_key"
 configure_auth http://radarr:7878 v3 "$radarr_key"
@@ -109,6 +215,54 @@ configure_auth http://sonarr:8989 v3 "$sonarr_key"
 
 ensure_root_folder http://radarr:7878 "$radarr_key" "$RADARR_ROOT_FOLDER"
 ensure_root_folder http://sonarr:8989 "$sonarr_key" "$SONARR_ROOT_FOLDER"
+
+sabnzbd_set_config \
+  --data-urlencode "section=misc" \
+  --data-urlencode "keyword=download_dir" \
+  --data-urlencode "value=$sabnzbd_incomplete_dir"
+sabnzbd_set_config \
+  --data-urlencode "section=misc" \
+  --data-urlencode "keyword=complete_dir" \
+  --data-urlencode "value=$sabnzbd_complete_dir"
+sabnzbd_set_config \
+  --data-urlencode "section=categories" \
+  --data-urlencode "name=$sabnzbd_radarr_category" \
+  --data-urlencode "dir=$sabnzbd_radarr_category" \
+  --data-urlencode "pp=3"
+sabnzbd_set_config \
+  --data-urlencode "section=categories" \
+  --data-urlencode "name=$sabnzbd_sonarr_category" \
+  --data-urlencode "dir=$sabnzbd_sonarr_category" \
+  --data-urlencode "pp=3"
+sabnzbd_set_config \
+  --data-urlencode "section=categories" \
+  --data-urlencode "name=$sabnzbd_prowlarr_category" \
+  --data-urlencode "dir=$sabnzbd_prowlarr_category" \
+  --data-urlencode "pp=3"
+sabnzbd_set_config \
+  --data-urlencode "section=servers" \
+  --data-urlencode "name=$sabnzbd_provider_name" \
+  --data-urlencode "host=$sabnzbd_provider_host" \
+  --data-urlencode "port=$sabnzbd_provider_port" \
+  --data-urlencode "username=$sabnzbd_provider_username" \
+  --data-urlencode "password=$sabnzbd_provider_password" \
+  --data-urlencode "connections=$sabnzbd_provider_connections" \
+  --data-urlencode "ssl=$sabnzbd_provider_ssl" \
+  --data-urlencode "ssl_verify=$sabnzbd_provider_ssl_verify" \
+  --data-urlencode "priority=$sabnzbd_provider_priority" \
+  --data-urlencode "enable=1"
+sabnzbd_set_config \
+  --data-urlencode "section=misc" \
+  --data-urlencode "keyword=username" \
+  --data-urlencode "value=$sabnzbd_ui_username"
+sabnzbd_set_config \
+  --data-urlencode "section=misc" \
+  --data-urlencode "keyword=password" \
+  --data-urlencode "value=$sabnzbd_ui_password"
+
+register_download_client http://radarr:7878 v3 "$radarr_key" movieCategory "$sabnzbd_radarr_category" true
+register_download_client http://sonarr:8989 v3 "$sonarr_key" tvCategory "$sabnzbd_sonarr_category" true
+register_download_client http://prowlarr:9696 v1 "$prowlarr_key" category "$sabnzbd_prowlarr_category" false
 
 register_application Radarr Radarr RadarrSettings http://radarr:7878 "$radarr_key" '[2000,2010,2020,2030,2040,2045,2050,2060]'
 register_application Sonarr Sonarr SonarrSettings http://sonarr:8989 "$sonarr_key" '[5000,5010,5020,5030,5040,5045,5050,5060]'

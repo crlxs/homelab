@@ -11,6 +11,32 @@
       prompt: "Enter the password for the Servarr UI user"
       private: true
       confirm: true
+    - name: sabnzbd_ui_username
+      prompt: "Enter the SABnzbd UI username"
+      private: false
+      default: admin
+    - name: sabnzbd_provider_name
+      prompt: "Enter a name for the Usenet provider"
+      private: false
+      default: primary
+    - name: sabnzbd_provider_host
+      prompt: "Enter the Usenet provider hostname"
+      private: false
+    - name: sabnzbd_provider_port
+      prompt: "Enter the Usenet provider port"
+      private: false
+      default: "563"
+    - name: sabnzbd_provider_username
+      prompt: "Enter the Usenet provider username"
+      private: true
+    - name: sabnzbd_provider_password
+      prompt: "Enter the Usenet provider password"
+      private: true
+      confirm: true
+    - name: sabnzbd_provider_connections
+      prompt: "Enter the provider's allowed simultaneous connections"
+      private: false
+      default: "10"
 
   roles:
     - role: docker

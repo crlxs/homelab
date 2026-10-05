@@ -58,9 +58,24 @@ services:
       timeout: 3s
       retries: 30
 
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID={{ servarr_puid }}
+      - PGID={{ servarr_pgid }}
+      - TZ={{ timezone }}
+      - UMASK=002
+    volumes:
+      - {{ sabnzbd_conf_dir }}:/config
+      - {{ media_dir }}:{{ media_dir }}
+    ports:
+      - {{ sabnzbd_web_port }}:8080
+    restart: unless-stopped
+
   servarr-bootstrap:
     image: alpine:3.21
-    container_name: servarr-bootstrap
+    profiles: ["bootstrap"]
     depends_on:
       prowlarr:
         condition: service_healthy
@@ -78,8 +93,7 @@ services:
       - {{ servarr_conf_dir }}/prowlarr:/config/prowlarr:ro
       - {{ servarr_conf_dir }}/radarr:/config/radarr:ro
       - {{ servarr_conf_dir }}/sonarr:/config/sonarr:ro
-    secrets:
-      - servarr_ui_password
+      - {{ sabnzbd_conf_dir }}:/config/sabnzbd:ro
     restart: "no"
 
 #  lidarr:
@@ -124,10 +138,6 @@ services:
       - /dev/kmsg
     restart: unless-stopped
     privileged: true # Often required on modern kernels to access cgroup data
-
-secrets:
-  servarr_ui_password:
-    file: "{{ servarr_conf_dir }}/secrets/ui_password"
 
    # Add as a sidecar to radarr to export specific radarr info like movies, etc. 
 #  radarr-exporter:

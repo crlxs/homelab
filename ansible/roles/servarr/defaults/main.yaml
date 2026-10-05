@@ -4,6 +4,17 @@ servarr_conf_dir: /opt/servarr
 media_dir: /opt/media
 radarr_root_folder: "{{ media_dir }}/movies"
 sonarr_root_folder: "{{ media_dir }}/tv"
+sabnzbd_conf_dir: "{{ servarr_conf_dir }}/sabnzbd"
+sabnzbd_downloads_dir: "{{ media_dir }}/downloads"
+sabnzbd_incomplete_dir: "{{ sabnzbd_downloads_dir }}/incomplete"
+sabnzbd_complete_dir: "{{ sabnzbd_downloads_dir }}/complete"
+sabnzbd_web_port: 8081
+sabnzbd_radarr_category: radarr
+sabnzbd_sonarr_category: sonarr
+sabnzbd_prowlarr_category: prowlarr
+sabnzbd_provider_ssl: true
+sabnzbd_provider_ssl_verify: 3
+sabnzbd_provider_priority: 0
 timezone: Etc/UTC
 servarr_ui_username: admin
 # Provided interactively by playbooks/01-deploy-servarr.yaml.

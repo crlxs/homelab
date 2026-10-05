@@ -91,6 +91,8 @@
   loop:
     - "{{ radarr_root_folder }}"
     - "{{ sonarr_root_folder }}"
+    - "{{ sabnzbd_incomplete_dir }}"
+    - "{{ sabnzbd_complete_dir }}"
 
 - name: Ensure config directory exists
   ansible.builtin.file:
@@ -100,27 +102,33 @@
     group: "{{ servarr_group }}"
     mode: "0755"
 
-- name: Require a Servarr UI password
+- name: Ensure SABnzbd config directory exists
+  ansible.builtin.file:
+    path: "{{ sabnzbd_conf_dir }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: "0755"
+
+- name: Require Servarr and SABnzbd bootstrap values
   ansible.builtin.assert:
-    that: servarr_ui_password | length > 0
-    fail_msg: Define servarr_ui_password before deploying the Servarr stack.
+    that:
+      - servarr_ui_password | length > 0
+      - sabnzbd_ui_username | length > 0
+      - sabnzbd_provider_name | length > 0
+      - sabnzbd_provider_host | length > 0
+      - sabnzbd_provider_username | length > 0
+      - sabnzbd_provider_password | length > 0
+      - sabnzbd_provider_port | int > 0
+      - sabnzbd_provider_connections | int > 0
+      - sabnzbd_provider_port | int != 563 or sabnzbd_provider_ssl | bool
+    fail_msg: Define all required Servarr and SABnzbd bootstrap values.
   no_log: true
 
-- name: Create Compose secrets directory
+- name: Remove obsolete on-host Servarr UI password file
   ansible.builtin.file:
-    path: "{{ servarr_conf_dir }}/secrets"
-    state: directory
-    owner: root
-    group: root
-    mode: "0700"
-
-- name: Install Servarr UI password secret
-  ansible.builtin.copy:
-    content: "{{ servarr_ui_password }}\n"
-    dest: "{{ servarr_conf_dir }}/secrets/ui_password"
-    owner: root
-    group: root
-    mode: "0600"
+    path: "{{ servarr_conf_dir }}/secrets/ui_password"
+    state: absent
   no_log: true
 
 - name: Install Servarr bootstrap script
@@ -145,3 +153,52 @@
     files:
       - docker-compose.yaml
     state: present
+
+- name: Remove legacy Servarr bootstrap container
+  ansible.builtin.command:
+    argv:
+      - docker
+      - container
+      - rm
+      - --force
+      - servarr-bootstrap
+  register: servarr_legacy_bootstrap_container
+  changed_when: servarr_legacy_bootstrap_container.rc == 0
+  failed_when: servarr_legacy_bootstrap_container.rc not in [0, 1]
+
+- name: Bootstrap Servarr and SABnzbd configuration
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - --file
+      - docker-compose.yaml
+      - run
+      - --rm
+      - --no-deps
+      - -T
+      - servarr-bootstrap
+    chdir: "{{ servarr_conf_dir }}"
+    stdin: >-
+      {{ {
+        "servarr_ui_password": servarr_ui_password,
+        "sabnzbd_ui_username": sabnzbd_ui_username,
+        "sabnzbd_ui_password": servarr_ui_password,
+        "sabnzbd_incomplete_dir": sabnzbd_incomplete_dir,
+        "sabnzbd_complete_dir": sabnzbd_complete_dir,
+        "sabnzbd_radarr_category": sabnzbd_radarr_category,
+        "sabnzbd_sonarr_category": sabnzbd_sonarr_category,
+        "sabnzbd_prowlarr_category": sabnzbd_prowlarr_category,
+        "sabnzbd_provider_name": sabnzbd_provider_name,
+        "sabnzbd_provider_host": sabnzbd_provider_host,
+        "sabnzbd_provider_port": sabnzbd_provider_port,
+        "sabnzbd_provider_username": sabnzbd_provider_username,
+        "sabnzbd_provider_password": sabnzbd_provider_password,
+        "sabnzbd_provider_connections": sabnzbd_provider_connections,
+        "sabnzbd_provider_ssl": sabnzbd_provider_ssl,
+        "sabnzbd_provider_ssl_verify": sabnzbd_provider_ssl_verify,
+        "sabnzbd_provider_priority": sabnzbd_provider_priority
+      } | to_json }}
+    stdin_add_newline: true
+  changed_when: false
+  no_log: true
