@@ -1,0 +1,57 @@
+- name: Provision Homarr and collect existing monitoring credentials
+  hosts: proxmox
+  gather_facts: true
+  pre_tasks:
+    - name: Locate the private controller credentials
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../inventory/servarr.local.yaml"
+      delegate_to: localhost
+      become: false
+      register: homarr_local_secrets
+
+    - name: Require private controller file permissions
+      ansible.builtin.assert:
+        that:
+          - homarr_local_secrets.stat.mode == '0600'
+      when: homarr_local_secrets.stat.exists
+
+    - name: Load private credentials
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../inventory/servarr.local.yaml"
+      when: homarr_local_secrets.stat.exists
+      no_log: true
+
+    - name: Load shared Servarr defaults for standalone dashboard deployment
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: noop.yaml
+        public: true
+
+  tasks:
+    - name: Provision the dashboard without redeploying Servarr
+      ansible.builtin.include_role:
+        name: homarr
+        tasks_from: provision.yaml
+        public: true
+
+- name: Install and configure the native Homarr dashboard
+  hosts: homarr_lxcs
+  gather_facts: false
+  become: false
+  pre_tasks:
+    - name: Install Python in the minimal Debian guest
+      ansible.builtin.raw: test -x /usr/bin/python3 || (apt-get update && apt-get install -y python3)
+      register: homarr_python
+      changed_when: "'Setting up python3' in homarr_python.stdout"
+
+    - name: Gather guest facts
+      ansible.builtin.setup:
+
+    - name: Load shared Servarr defaults
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: noop.yaml
+        public: true
+
+  roles:
+    - role: homarr

@@ -1,0 +1,203 @@
+- name: Require the supported Debian native runtime
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == 'Debian'
+      - ansible_distribution_major_version == '13'
+      - ansible_architecture == 'x86_64'
+      - homarr_version is match('^v[0-9]+\.[0-9]+\.[0-9]+$')
+      - homarr_node_version is match('^v24\.[0-9]+\.[0-9]+$')
+
+- name: Install dashboard runtime dependencies
+  ansible.builtin.apt:
+    name: [ca-certificates, curl, xz-utils, openssl, redis-server, nginx, python3]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create the dedicated dashboard service account
+  ansible.builtin.user:
+    name: homarr
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Create dashboard installation and persistent data directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.owner }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - {path: "{{ homarr_install_dir }}", owner: root, mode: '0755'}
+    - {path: "{{ homarr_install_dir }}/releases/{{ homarr_version }}", owner: root, mode: '0755'}
+    - {path: "{{ homarr_data_dir }}", owner: homarr, mode: '0750'}
+    - {path: "{{ homarr_data_dir }}/db", owner: homarr, mode: '0750'}
+    - {path: "{{ homarr_data_dir }}/trusted-certificates", owner: homarr, mode: '0750'}
+
+- name: Download the pinned Node.js runtime
+  ansible.builtin.get_url:
+    url: "https://nodejs.org/dist/{{ homarr_node_version }}/node-{{ homarr_node_version }}-linux-x64.tar.xz"
+    dest: "{{ homarr_install_dir }}/node-{{ homarr_node_version }}.tar.xz"
+    checksum: "{{ homarr_node_checksum | default(omit, true) }}"
+    mode: '0644'
+
+- name: Extract the pinned Node.js runtime
+  ansible.builtin.unarchive:
+    src: "{{ homarr_install_dir }}/node-{{ homarr_node_version }}.tar.xz"
+    dest: "{{ homarr_install_dir }}"
+    remote_src: true
+    creates: "{{ homarr_install_dir }}/node-{{ homarr_node_version }}-linux-x64/bin/node"
+
+- name: Download the pinned Homarr Debian prebuilt release
+  ansible.builtin.get_url:
+    url: "https://github.com/homarr-labs/homarr/releases/download/{{ homarr_version }}/build-debian-amd64.tar.gz"
+    dest: "{{ homarr_install_dir }}/homarr-{{ homarr_version }}.tar.gz"
+    checksum: "{{ homarr_release_checksum | default(omit, true) }}"
+    mode: '0644'
+    timeout: 120
+
+- name: Extract the release without touching persistent dashboard data
+  ansible.builtin.unarchive:
+    src: "{{ homarr_install_dir }}/homarr-{{ homarr_version }}.tar.gz"
+    dest: "{{ homarr_install_dir }}/releases/{{ homarr_version }}"
+    remote_src: true
+    creates: "{{ homarr_install_dir }}/releases/{{ homarr_version }}/apps/nextjs/server.js"
+  notify: Restart Homarr
+
+- name: Generate persistent encryption and authentication secrets only once
+  ansible.builtin.shell: |
+    umask 077
+    printf 'SECRET_ENCRYPTION_KEY=%s\nAUTH_SECRET=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" > {{ (homarr_data_dir ~ '/secrets.env') | quote }}
+  args:
+    creates: "{{ homarr_data_dir }}/secrets.env"
+  no_log: true
+
+- name: Keep runtime secrets private
+  ansible.builtin.file:
+    path: "{{ homarr_data_dir }}/secrets.env"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Trust the Proxmox root CA for monitoring connections
+  ansible.builtin.copy:
+    content: "{{ homarr_pve_ca_pem }}"
+    dest: "{{ homarr_data_dir }}/trusted-certificates/proxmox-ca.crt"
+    owner: homarr
+    group: homarr
+    mode: '0644'
+  notify: Restart Homarr
+
+- name: Install native dashboard service
+  ansible.builtin.template:
+    src: homarr.service.j2
+    dest: /etc/systemd/system/homarr.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Homarr
+
+- name: Install the dashboard reverse proxy
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/homarr
+    owner: root
+    group: root
+    mode: '0644'
+    validate: /bin/sh -c 'printf "events {}\nhttp { include %s; }\n" > /tmp/homarr-nginx-check.conf && /usr/sbin/nginx -t -c /tmp/homarr-nginx-check.conf'
+  notify: Reload Homarr proxy
+
+- name: Enable the dashboard proxy configuration
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/homarr
+    dest: /etc/nginx/sites-enabled/homarr
+    state: link
+  notify: Reload Homarr proxy
+
+- name: Remove the unused Debian default proxy site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Homarr proxy
+
+- name: Create the Redis systemd override directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/redis-server.service.d
+    state: directory
+    mode: '0755'
+
+- name: Allow Redis to run inside an unprivileged LXC without nested user namespaces
+  ansible.builtin.copy:
+    content: |
+      [Service]
+      PrivateUsers=false
+    dest: /etc/systemd/system/redis-server.service.d/homarr-lxc.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Homarr Redis
+
+- name: Apply Redis compatibility settings before starting the dashboard
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start local Redis
+  ansible.builtin.systemd_service:
+    name: redis-server
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply pending dashboard service changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the dashboard and proxy
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  loop: [homarr, nginx]
+
+- name: Wait for Homarr HTTP readiness
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ homarr_port }}/api/health/ready"
+    status_code: 200
+  register: homarr_ready
+  until: homarr_ready is succeeded
+  retries: 60
+  delay: 2
+
+- name: Verify the sign-in page renders without a redirect loop
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ homarr_port }}/auth/login"
+    status_code: 200
+    follow_redirects: safe
+
+- name: Install the dashboard bootstrap helper without embedded credentials
+  ansible.builtin.copy:
+    src: bootstrap.py
+    dest: "{{ homarr_install_dir }}/bootstrap.py"
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Install the media storage widget template without credentials
+  ansible.builtin.copy:
+    src: media-storage.jsx
+    dest: "{{ homarr_install_dir }}/media-storage.jsx"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Bootstrap administrator, integrations and the initial dashboard through Homarr APIs
+  ansible.builtin.command:
+    argv: [python3, "{{ homarr_install_dir }}/bootstrap.py", "http://127.0.0.1:{{ homarr_port }}", "{{ homarr_data_dir }}/ansible-bootstrap.json"]
+    stdin: "{{ homarr_bootstrap_data | to_json }}"
+  register: homarr_bootstrap_result
+  changed_when: homarr_bootstrap_result.stdout is match('^CHANGED:')
+  no_log: true
+
+- name: Show the configured dashboard address
+  ansible.builtin.debug:
+    msg: "Homarr: {{ homarr_bootstrap_data.dashboard_url }} — sign in with your configured Homarr administrator (defaults to the Servarr login)."

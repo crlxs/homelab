@@ -1,0 +1,16 @@
+# Native, prebuilt release. Explicit version changes are upgrades.
+homarr_version: v2.2.0
+homarr_release_checksum: sha256:8b36a22b605c4b2f22754f29e2f775489813dd5a3906f3338fa82e08193caf34
+homarr_node_version: v24.18.0
+homarr_node_checksum: sha256:55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742
+homarr_install_dir: /opt/homarr
+homarr_data_dir: /appdata
+homarr_port: 7575
+homarr_admin_username: "{{ servarr_ui_username }}"
+homarr_admin_password: "{{ servarr_ui_password }}"
+homarr_board_name: Homelab
+homarr_timezone: Europe/Madrid
+homarr_proxmox_username: homarr
+homarr_proxmox_token_id: monitoring
+homarr_proxmox_token_file: /etc/homarr/proxmox-token.json
+homarr_proxmox_url: "https://{{ proxmox_api_host }}:8006"

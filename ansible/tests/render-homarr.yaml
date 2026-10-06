@@ -1,0 +1,39 @@
+- name: Validate native dashboard templates offline
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_remote_tmp: /tmp/ansible-homarr-test-tmp
+  tasks:
+    - name: Load dashboard defaults
+      ansible.builtin.include_vars: ../roles/homarr/defaults/main.yaml
+
+    - name: Allocate a temporary rendering directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: homarr-render-
+      register: homarr_fixture
+
+    - name: Render native service and proxy configuration
+      block:
+        - name: Render dashboard templates
+          ansible.builtin.template:
+            src: "../roles/homarr/templates/{{ item }}.j2"
+            dest: "{{ homarr_fixture.path }}/{{ item }}"
+            mode: '0600'
+          loop: [homarr.service, nginx.conf]
+
+        - name: Check the rendered runtime uses persistent data and a dedicated account
+          ansible.builtin.assert:
+            that:
+              - "'User=homarr' in lookup('ansible.builtin.file', homarr_fixture.path ~ '/homarr.service')"
+              - "'DB_URL=/appdata/db/db.sqlite' in lookup('ansible.builtin.file', homarr_fixture.path ~ '/homarr.service')"
+              - "'HOSTNAME=localhost' in lookup('ansible.builtin.file', homarr_fixture.path ~ '/homarr.service')"
+              - "'listen 7575' in lookup('ansible.builtin.file', homarr_fixture.path ~ '/nginx.conf')"
+              - "'proxy_pass http://127.0.0.1:3001' in lookup('ansible.builtin.file', homarr_fixture.path ~ '/nginx.conf')"
+      always:
+        - name: Remove fixture templates
+          ansible.builtin.file:
+            path: "{{ homarr_fixture.path }}"
+            state: absent

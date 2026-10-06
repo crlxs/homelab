@@ -1,0 +1,19 @@
+- name: Restart Homarr Redis
+  ansible.builtin.systemd_service:
+    name: redis-server
+    state: restarted
+    enabled: true
+    daemon_reload: true
+
+- name: Restart Homarr
+  ansible.builtin.systemd_service:
+    name: homarr
+    state: restarted
+    enabled: true
+    daemon_reload: true
+
+- name: Reload Homarr proxy
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: reloaded
+    enabled: true

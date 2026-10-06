@@ -14,3 +14,6 @@ nzbgeek_api_key: ""
 # If managing an already configured server, supply its existing admin credentials.
 jellyfin_admin_username: admin
 # jellyfin_admin_password: "" # Defaults to servarr_ui_password.
+# Homarr uses the Servarr username/password by default (minimum 8 characters).
+# homarr_admin_username: admin
+# homarr_admin_password: ""

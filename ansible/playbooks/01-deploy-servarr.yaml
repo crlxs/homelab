@@ -60,3 +60,6 @@
       ansible.builtin.include_role:
         name: servarr
         tasks_from: jellyfin-bootstrap.yaml
+
+- name: Deploy the homelab dashboard
+  ansible.builtin.import_playbook: 02-deploy-homarr.yaml

@@ -1,3 +1,4 @@
 /inventory/servarr.local.yaml
 /inventory/servarr.local.yml
 /.vault-pass
+__pycache__/

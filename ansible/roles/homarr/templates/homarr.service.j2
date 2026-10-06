@@ -1,0 +1,41 @@
+[Unit]
+Description=Homarr homelab dashboard
+Wants=network-online.target
+After=network-online.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=homarr
+Group=homarr
+WorkingDirectory={{ homarr_install_dir }}/releases/{{ homarr_version }}
+EnvironmentFile={{ homarr_data_dir }}/secrets.env
+Environment=NODE_ENV=production
+Environment=DB_DRIVER=better-sqlite3
+Environment=DB_DIALECT=sqlite
+Environment=DB_URL={{ homarr_data_dir }}/db/db.sqlite
+Environment=AUTH_PROVIDERS=credentials
+Environment=AUTH_TRUST_HOST=true
+# Next.js locale rewrites use localhost as their internal origin. Keep the
+# standalone bind hostname identical to prevent redirects back to the same URL.
+Environment=HOSTNAME=localhost
+Environment=NODE_OPTIONS=--dns-result-order=ipv4first
+Environment=PORT=3000
+Environment=REDIS_IS_EXTERNAL=true
+Environment=REDIS_HOST=127.0.0.1
+Environment=REDIS_PORT=6379
+Environment=LOCAL_CERTIFICATE_PATH={{ homarr_data_dir }}/trusted-certificates
+Environment=NODE_EXTRA_CA_CERTS={{ homarr_data_dir }}/trusted-certificates/proxmox-ca.crt
+Environment=TZ={{ homarr_timezone }}
+Environment=NEXT_TELEMETRY_DISABLED=1
+Environment=TURBO_TELEMETRY_DISABLED=1
+ExecStartPre={{ homarr_install_dir }}/node-{{ homarr_node_version }}-linux-x64/bin/node db/migrations/sqlite/migrate.cjs db/migrations/sqlite
+ExecStart={{ homarr_install_dir }}/node-{{ homarr_node_version }}-linux-x64/bin/node apps/nextjs/server.js
+Restart=on-failure
+RestartSec=5
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

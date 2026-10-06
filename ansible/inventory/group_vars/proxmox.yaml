@@ -86,3 +86,12 @@ servarr_lxcs:
 # Share the host's NVIDIA GPU; only matching userspace drivers are installed
 # inside Jellyfin. Host kernel modules/drivers are not changed by the role.
 jellyfin_nvidia_enabled: true
+
+# Independent dashboard LXC; no media bind mount or Docker nesting needed.
+homarr_lxc:
+  name: homarr
+  vmid: 127
+  ip: 192.168.1.207/24
+  cores: 2
+  memory: 2048
+  disk: 12

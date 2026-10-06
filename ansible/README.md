@@ -33,6 +33,12 @@ Vault for persistent secret storage. Jellyfin's NVIDIA support and NZBGeek are
 bootstrapped automatically. Per-LXC Prometheus node exporters
 on port 9100 replace the Docker-specific cAdvisor service.
 
+The complete deployment also provisions a native Homarr dashboard in CT 127 at
+http://192.168.1.207:7575, with Proxmox health, media storage, download progress,
+Servarr widgets and application shortcuts. To add it to an existing stack
+without redeploying Servarr, run `ansible-playbook playbooks/02-deploy-homarr.yaml`.
+See [the Homarr guide](roles/homarr/README.md) for credentials, backups and reruns.
+
 The old Servarr VM is not deleted or stopped automatically. `proxmox_vms` is
 empty by default on this branch; VM provisioning remains available for other
 workloads. VMs are provisioned with a **golden image** approach: a Debian 13 template is
@@ -53,11 +59,13 @@ ansible/
 │       └── proxmox.yaml              # Proxmox API settings + VM definitions
 ├── playbooks/
 │   ├── 00-provision-vms.yaml          # clone unrelated VMs from the golden image
-│   └── 01-deploy-servarr.yaml         # provision + configure the native LXCs
+│   ├── 01-deploy-servarr.yaml         # provision + configure Servarr and Homarr
+│   └── 02-deploy-homarr.yaml          # add/update dashboard independently
 └── roles/
     ├── proxmox_vm/                   # clone template, configure, start VMs
     ├── proxmox_lxc/                  # prepare media, provision and map LXCs
     ├── servarr/                      # native apps + API bootstrap
+    ├── homarr/                       # native dashboard + initial board
     └── docker/                       # optional Docker role for other guests
 ```
 

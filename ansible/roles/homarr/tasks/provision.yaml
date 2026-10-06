@@ -1,0 +1,205 @@
+- name: Validate dashboard resources and separation from Servarr
+  ansible.builtin.assert:
+    that:
+      - groups['proxmox'] | length == 1
+      - homarr_lxc.name == 'homarr'
+      - homarr_lxc.vmid | int > 100
+      - homarr_lxc.vmid not in (servarr_lxcs | map(attribute='vmid') | list)
+      - homarr_lxc.ip not in (servarr_lxcs | map(attribute='ip') | list)
+      - homarr_lxc.ip is match('^[0-9.]+/[0-9]+$')
+      - homarr_lxc.cores | int > 0
+      - homarr_lxc.memory | int >= 2048
+      - homarr_lxc.disk | int >= 8
+      - homarr_proxmox_username is match('^[a-z][a-z0-9-]+$')
+      - homarr_proxmox_token_id is match('^[a-z][a-z0-9-]+$')
+
+- name: Validate credentials before creating resources
+  ansible.builtin.assert:
+    that:
+      - proxmox_api_token_secret | length > 0
+      - homarr_admin_username | length >= 3
+      - homarr_admin_password | length >= 8
+      - jellyfin_admin_password | length > 0
+  no_log: true
+
+- name: Check whether the dashboard CT ID is already allocated
+  ansible.builtin.command:
+    argv: [pvesh, get, /cluster/resources, --type, vm, --output-format, json]
+  register: homarr_existing_guests
+  changed_when: false
+
+- name: Preserve unrelated VMs and containers
+  ansible.builtin.assert:
+    that:
+      - item.type == 'lxc' and item.name == homarr_lxc.name
+    fail_msg: The requested Homarr ID belongs to an unrelated guest. Choose another ID.
+  loop: "{{ homarr_existing_guests.stdout | from_json | selectattr('vmid', 'equalto', homarr_lxc.vmid) | list }}"
+  loop_control:
+    label: "{{ item.vmid }}"
+
+- name: Refresh the template catalog when discovering a Debian template
+  ansible.builtin.command: pveam update
+  when: servarr_lxc_template | length == 0
+  changed_when: false
+
+- name: Read the Debian template catalog
+  ansible.builtin.command: pveam available --section system
+  register: homarr_template_catalog
+  when: servarr_lxc_template | length == 0
+  changed_when: false
+
+- name: Select the Debian 13 template
+  ansible.builtin.set_fact:
+    homarr_template: "{{ servarr_lxc_template if servarr_lxc_template | length > 0 else (homarr_template_catalog.stdout | regex_findall('debian-13-standard_[^\\s]+_amd64.tar.zst') | sort | last | default('')) }}"
+
+- name: Require the expected template format
+  ansible.builtin.assert:
+    that:
+      - homarr_template is match('^debian-13-standard_[^/]+_amd64.tar.zst$')
+
+- name: List downloaded templates
+  ansible.builtin.command:
+    argv: [pveam, list, "{{ servarr_lxc_template_storage }}"]
+  register: homarr_downloaded_templates
+  changed_when: false
+
+- name: Download the template only when absent
+  ansible.builtin.command:
+    argv: [pveam, download, "{{ servarr_lxc_template_storage }}", "{{ homarr_template }}"]
+  when: homarr_template not in homarr_downloaded_templates.stdout
+  changed_when: true
+
+- name: Create the unprivileged Homarr LXC through the Proxmox API
+  community.proxmox.proxmox:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ homarr_lxc.vmid }}"
+    hostname: "{{ homarr_lxc.name }}"
+    ostemplate: "{{ servarr_lxc_template_storage }}:vztmpl/{{ homarr_template }}"
+    disk: "{{ servarr_lxc_storage }}:{{ homarr_lxc.disk }}"
+    cores: "{{ homarr_lxc.cores }}"
+    memory: "{{ homarr_lxc.memory }}"
+    swap: 512
+    netif:
+      net0: "name=eth0,bridge={{ servarr_lxc_bridge }},ip={{ homarr_lxc.ip }},gw={{ servarr_lxc_gateway }}"
+    nameserver: "{{ servarr_lxc_nameserver }}"
+    onboot: true
+    unprivileged: true
+    update: false
+    state: present
+    timeout: 600
+  delegate_to: localhost
+  become: false
+
+- name: Read dashboard container configuration
+  ansible.builtin.command:
+    argv: [pvesh, get, "/nodes/{{ proxmox_node }}/lxc/{{ homarr_lxc.vmid }}/config", --output-format, json]
+  register: homarr_ct_config_result
+  changed_when: false
+
+- name: Decode dashboard container configuration
+  ansible.builtin.set_fact:
+    homarr_ct_config: "{{ homarr_ct_config_result.stdout | from_json }}"
+
+- name: Preserve container identity and existing networking
+  ansible.builtin.assert:
+    that:
+      - homarr_ct_config.hostname == homarr_lxc.name
+      - homarr_ct_config.unprivileged | int == 1
+      - ('ip=' ~ homarr_lxc.ip) in homarr_ct_config.net0
+      - ('bridge=' ~ servarr_lxc_bridge) in homarr_ct_config.net0
+    fail_msg: Existing Homarr networking differs; migrate it explicitly before rerunning.
+
+- name: Reconcile dashboard resources and automatic startup
+  ansible.builtin.command:
+    argv: [pct, set, "{{ homarr_lxc.vmid | string }}", --cores, "{{ homarr_lxc.cores | string }}", --memory, "{{ homarr_lxc.memory | string }}", --onboot, '1']
+  when: homarr_ct_config.cores | int != homarr_lxc.cores | int or homarr_ct_config.memory | int != homarr_lxc.memory | int or homarr_ct_config.onboot | default(0) | int != 1
+  changed_when: true
+
+- name: Read dashboard container state
+  ansible.builtin.command:
+    argv: [pct, status, "{{ homarr_lxc.vmid | string }}"]
+  register: homarr_ct_status
+  changed_when: false
+
+- name: Start the dashboard container when stopped
+  ansible.builtin.command:
+    argv: [pct, start, "{{ homarr_lxc.vmid | string }}"]
+  when: "'running' not in homarr_ct_status.stdout"
+  changed_when: true
+
+- name: Wait for the dashboard guest network
+  ansible.builtin.command:
+    argv: [pct, exec, "{{ homarr_lxc.vmid | string }}", --, ip, -4, address, show, dev, eth0]
+  register: homarr_guest_network
+  until: (homarr_lxc.ip | split('/') | first) in homarr_guest_network.stdout
+  retries: 30
+  delay: 2
+  changed_when: false
+
+- name: Create private monitoring configuration directory on Proxmox
+  ansible.builtin.file:
+    path: "{{ homarr_proxmox_token_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Install credential discovery helper on Proxmox
+  ansible.builtin.copy:
+    src: collect-credentials.py
+    dest: /etc/homarr/collect-credentials.py
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Create a read-only monitoring token and discover existing service keys
+  ansible.builtin.command:
+    argv: [python3, /etc/homarr/collect-credentials.py]
+    stdin: "{{ {'lxcs': servarr_lxcs, 'conf_dir': servarr_conf_dir, 'sabnzbd_conf_dir': sabnzbd_conf_dir, 'username': homarr_proxmox_username, 'token_id': homarr_proxmox_token_id, 'token_file': homarr_proxmox_token_file} | to_json }}"
+  register: homarr_collected_credentials
+  changed_when: (homarr_collected_credentials.stdout | from_json).changed
+  no_log: true
+
+- name: Read the Proxmox CA certificate for verified integration TLS
+  ansible.builtin.slurp:
+    src: /etc/pve/pve-root-ca.pem
+  register: homarr_pve_ca
+
+- name: Register dashboard guest and bootstrap inputs in memory
+  ansible.builtin.add_host:
+    name: homarr
+    groups: homarr_lxcs
+    ansible_connection: community.proxmox.proxmox_pct_remote
+    ansible_host: "{{ ansible_host }}"
+    ansible_user: "{{ ansible_user }}"
+    ansible_private_key_file: "{{ ansible_private_key_file }}"
+    ansible_become: false
+    ansible_paramiko_pty: false
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_remote_tmp: /tmp/ansible-homarr
+    proxmox_vmid: "{{ homarr_lxc.vmid }}"
+    homarr_version: "{{ homarr_version }}"
+    homarr_release_checksum: "{{ homarr_release_checksum }}"
+    homarr_node_version: "{{ homarr_node_version }}"
+    homarr_node_checksum: "{{ homarr_node_checksum }}"
+    homarr_install_dir: "{{ homarr_install_dir }}"
+    homarr_data_dir: "{{ homarr_data_dir }}"
+    homarr_port: "{{ homarr_port }}"
+    homarr_timezone: "{{ homarr_timezone }}"
+    homarr_pve_ca_pem: "{{ homarr_pve_ca.content | b64decode }}"
+    homarr_bootstrap_data: >-
+      {{ (homarr_collected_credentials.stdout | from_json) | combine({
+        'admin_username': homarr_admin_username, 'admin_password': homarr_admin_password,
+        'board_name': homarr_board_name, 'lxcs': servarr_lxcs, 'ports': servarr_ports,
+        'proxmox_url': homarr_proxmox_url, 'proxmox_node': proxmox_node,
+        'jellyfin_username': jellyfin_admin_username, 'jellyfin_password': jellyfin_admin_password,
+        'dashboard_url': 'http://' ~ (homarr_lxc.ip | split('/') | first) ~ ':' ~ (homarr_port | string),
+        'timezone': homarr_timezone
+      }) }}
+  changed_when: false
+  no_log: true
