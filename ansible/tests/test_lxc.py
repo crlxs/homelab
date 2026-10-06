@@ -89,6 +89,22 @@ class FakeAPI(BaseHTTPRequestHandler):
         if self.headers.get("X-Api-Key") != state["key"]:
             return self.reply({"error": "Incorrect Arr key"}, 403)
         resource = path.split("/")[3]
+        if resource == "indexer" and path.endswith("/schema"):
+            return self.reply([{"name": "NZBgeek", "implementation": "Newznab",
+                                "configContract": "NewznabSettings", "fields": [
+                                    {"name": "apiPath", "value": "/api", "type": "textbox"}]}])
+        if resource == "appprofile":
+            return self.reply([{"id": 1, "enableRss": True, "enableAutomaticSearch": True,
+                                "enableInteractiveSearch": True}])
+        if resource == "command":
+            state["writes"].append((method, path))
+            return self.reply({"id": 1})
+        if path.endswith("/test"):
+            payload = json.loads(data)
+            saved = next(c for c in state[resource] if c["id"] == payload["id"])
+            key = next(f.get("value") for f in saved["fields"] if f["name"] == "apiKey")
+            expected = "sab-key" if resource == "downloadclient" else saved["name"].lower() + "-key"
+            return self.reply({} if key == expected else {"error": "Stale credential"}, 200 if key == expected else 400)
         if resource == "config":
             if method == "GET":
                 return self.reply(state["auth"])
@@ -97,8 +113,18 @@ class FakeAPI(BaseHTTPRequestHandler):
             return self.reply(state["auth"])
         collection = state[resource]
         if method == "GET":
+            if state.get("mask_secrets"):
+                response = copy.deepcopy(collection)
+                for provider in response:
+                    for field in provider.get("fields", []):
+                        if field["name"] == "apiKey":
+                            field["value"] = "********"
+                return self.reply(response)
             return self.reply(collection)
         payload = json.loads(data)
+        for field in payload.get("fields", []):
+            field.setdefault("type", "textbox")
+            field.setdefault("advanced", False)
         state["writes"].append((method, path))
         if method == "POST":
             payload["id"] = len(collection) + 1
@@ -118,7 +144,7 @@ class BootstrapTests(unittest.TestCase):
             server = ThreadingHTTPServer(("127.0.0.1", 0), FakeAPI)
             server.state = {
                 "key": f"{app}-key", "writes": [], "auth": {"id": 1, "username": ""},
-                "rootfolder": [], "downloadclient": [], "applications": [],
+                "rootfolder": [], "downloadclient": [], "applications": [], "indexer": [],
                 "config": {"misc": {}, "categories": {}, "servers": {}},
             }
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -130,6 +156,7 @@ class BootstrapTests(unittest.TestCase):
             "servarr_ports": self.ports,
             "sabnzbd_web_port": self.ports["sabnzbd"], "servarr_ui_username": "admin",
             "radarr_root_folder": "/opt/media/movies", "sonarr_root_folder": "/opt/media/tv",
+            "nzbgeek_indexer_name": "NZBGeek", "nzbgeek_base_url": "https://api.nzbgeek.info",
         }
         self.script = ENV.from_string(
             (ROOT / "roles/servarr/templates/bootstrap-servarr.sh.j2").read_text()
@@ -147,6 +174,7 @@ class BootstrapTests(unittest.TestCase):
             "sabnzbd_provider_username": "provider-user", "sabnzbd_provider_password": "secret & ' + %",
             "sabnzbd_provider_connections": "10", "sabnzbd_provider_ssl": True,
             "sabnzbd_provider_ssl_verify": 3, "sabnzbd_provider_priority": 0,
+            "nzbgeek_api_key": "fixture-geek-key",
         }
 
     def tearDown(self):
@@ -185,9 +213,56 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(config["servers"]["primary"]["ssl"], "1")
         self.assertEqual(config["servers"]["primary"]["ssl_verify"], "3")
         self.assertEqual(set(config["categories"]), {"radarr", "sonarr", "prowlarr"})
+        indexer = self.servers["prowlarr"].state["indexer"][0]
+        self.assertEqual(indexer["appProfileId"], 1)
+        self.assertEqual({f["name"]: f["value"] for f in indexer["fields"]}["apiKey"], "fixture-geek-key")
         writes = sum(len(s.state["writes"]) for s in self.servers.values())
         self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
         self.assertEqual(writes, sum(len(s.state["writes"]) for s in self.servers.values()))
+
+    def test_indexer_key_rotation_preserves_custom_fields(self):
+        self.run_bootstrap()
+        indexer = self.servers["prowlarr"].state["indexer"][0]
+        indexer["priority"] = 7
+        self.payload["nzbgeek_api_key"] = "rotated-fixture-key"
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "CHANGED")
+        self.assertEqual(len(self.servers["prowlarr"].state["indexer"]), 1)
+        self.assertEqual(indexer["priority"], 7)
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+
+    def test_preserve_differently_named_nzbgeek_indexer(self):
+        custom = {"name": "My Geek", "implementation": "Newznab", "fields": [
+            {"name": "baseUrl", "value": "https://api.nzbgeek.info"}], "id": 9}
+        self.servers["prowlarr"].state["indexer"].append(custom.copy())
+        self.run_bootstrap()
+        self.assertEqual(self.servers["prowlarr"].state["indexer"], [custom])
+
+    def test_missing_empty_api_fields_are_unchanged(self):
+        self.run_bootstrap()
+        for app in ["radarr", "sonarr", "prowlarr"]:
+            for field in self.servers[app].state["downloadclient"][0]["fields"]:
+                if field["name"] == "urlBase":
+                    field.pop("value")
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+
+    def test_masked_working_credentials_are_unchanged_but_stale_keys_repaired(self):
+        self.run_bootstrap()
+        for app in ["radarr", "sonarr", "prowlarr"]:
+            self.servers[app].state["mask_secrets"] = True
+        # Leave the indexer API key visible, as it is on the live Prowlarr API.
+        self.servers["prowlarr"].state["indexer"] = []
+        self.servers["prowlarr"].state["indexer"].append({"id": 9, "name": "My Geek", "implementation": "Newznab",
+            "fields": [{"name": "baseUrl", "value": "https://api.nzbgeek.info"}]})
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+        for app in ["radarr", "sonarr", "prowlarr"]:
+            for field in self.servers[app].state["downloadclient"][0]["fields"]:
+                if field["name"] == "apiKey":
+                    field["value"] = "stale-key"
+        for field in self.servers["prowlarr"].state["applications"][0]["fields"]:
+            if field["name"] == "apiKey":
+                field["value"] = "stale-key"
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "CHANGED")
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
 
     def test_repair_endpoints_without_resetting_user_configuration(self):
         self.run_bootstrap()
@@ -260,6 +335,35 @@ class SABAPIKeyParsingTests(unittest.TestCase):
 
 
 class IdentityMappingTests(unittest.TestCase):
+    def test_gpu_option_order_does_not_trigger_a_restart(self):
+        tasks = yaml.safe_load((ROOT / "roles/proxmox_lxc/tasks/gpu-devices.yaml").read_text())
+        source = tasks[1]["ansible.builtin.set_fact"]["servarr_ct_gpu_changed"]
+        for device in ["/dev/nvidia0,uid=1500,gid=1500,mode=0660",
+                       "path=/dev/nvidia0,gid=1500,mode=660,uid=1500"]:
+            result = ENV.from_string(source).render(
+                servarr_ct_gpu_changed=False, existing_device=device,
+                servarr_uid=1500, servarr_gid=1500, item="/dev/nvidia0",
+            )
+            self.assertEqual(result.strip(), "False")
+        result = ENV.from_string(source).render(
+            servarr_ct_gpu_changed=False, existing_device="/dev/nvidia0,uid=0,gid=0,mode=0660",
+            servarr_uid=1500, servarr_gid=1500, item="/dev/nvidia0",
+        )
+        self.assertEqual(result.strip(), "True")
+
+    def test_snapshot_guard_regex_is_valid(self):
+        tasks = yaml.safe_load((ROOT / "roles/proxmox_lxc/tasks/container.yaml").read_text())
+        task = next(t for t in tasks if "snapshot identity" in t["name"])
+        expression = task["ansible.builtin.assert"]["that"][0]
+        for config, expected in [("hostname: jellyfin\n", "True"),
+                                 ("hostname: jellyfin\n[backup]\n", "False")]:
+            result = ENV.from_string("{{ " + expression + " }}").render(
+                servarr_ct_mapping_changed=True,
+                servarr_ct_config_file={"content": base64.b64encode(config.encode()).decode()},
+                **task["vars"],
+            )
+            self.assertEqual(result, expected)
+
     def test_snapshot_mappings_do_not_make_an_unchanged_container_dirty(self):
         tasks = yaml.safe_load((ROOT / "roles/proxmox_lxc/tasks/container.yaml").read_text())
         idmap = next(t["ansible.builtin.set_fact"]["servarr_ct_idmap"] for t in tasks

@@ -23,6 +23,9 @@ Environment=PORT=5055
 Environment=CONFIG_DIRECTORY={{ servarr_conf_dir }}/jellyseerr
 Environment=NEXT_TELEMETRY_DISABLED=1
 ExecStart=/usr/bin/node dist/index.js
+{% elif servarr_ct.name == 'jellyfin' %}
+WorkingDirectory={{ jellyfin_conf_dir }}
+ExecStart=/usr/bin/jellyfin --datadir {{ jellyfin_conf_dir }} --configdir {{ jellyfin_conf_dir }}/config --cachedir {{ jellyfin_conf_dir }}/cache --logdir {{ jellyfin_conf_dir }}/log --webdir /usr/share/jellyfin/web --ffmpeg /usr/lib/jellyfin-ffmpeg/ffmpeg
 {% endif %}
 Restart=on-failure
 RestartSec=5

@@ -4,7 +4,7 @@
       - ansible_distribution == 'Debian'
       - ansible_distribution_major_version == '13'
       - ansible_architecture == 'x86_64'
-      - servarr_ct.name in ['radarr', 'sonarr', 'prowlarr', 'sabnzbd', 'jellyseerr']
+      - servarr_ct.name in ['radarr', 'sonarr', 'prowlarr', 'sabnzbd', 'jellyseerr', 'jellyfin']
 
 - name: Install common runtime and monitoring packages
   ansible.builtin.apt:
@@ -62,6 +62,12 @@
   ansible.builtin.include_tasks: arr.yaml
   when: servarr_ct.name in ['radarr', 'sonarr', 'prowlarr']
 
+- name: Check Jellyfin transcoding directory permissions as media
+  ansible.builtin.command:
+    argv: [runuser, -u, "{{ servarr_user }}", --, test, -w, "{{ jellyfin_transcode_dir }}"]
+  when: servarr_ct.name == 'jellyfin'
+  changed_when: false
+
 - name: Install SABnzbd from Debian backports
   ansible.builtin.include_tasks: sabnzbd.yaml
   when: servarr_ct.name == 'sabnzbd'
@@ -69,6 +75,10 @@
 - name: Install Jellyseerr from its pinned source release
   ansible.builtin.include_tasks: jellyseerr.yaml
   when: servarr_ct.name == 'jellyseerr'
+
+- name: Install Jellyfin and matching NVIDIA userspace drivers
+  ansible.builtin.include_tasks: jellyfin.yaml
+  when: servarr_ct.name == 'jellyfin'
 
 - name: Install application service unit
   ansible.builtin.template:
@@ -121,4 +131,17 @@
   ansible.builtin.set_fact:
     servarr_api_key: "{{ servarr_arr_config.content | b64decode | regex_findall('<ApiKey>([^<]+)</ApiKey>') | first }}"
   when: servarr_ct.name in ['radarr', 'sonarr', 'prowlarr']
+  no_log: true
+
+- name: Read the generated Jellyseerr settings in memory
+  ansible.builtin.slurp:
+    src: "{{ servarr_conf_dir }}/jellyseerr/settings.json"
+  register: servarr_jellyseerr_settings
+  when: servarr_ct.name == 'jellyseerr'
+  no_log: true
+
+- name: Record the Jellyseerr API key for linking services
+  ansible.builtin.set_fact:
+    servarr_api_key: "{{ (servarr_jellyseerr_settings.content | b64decode | from_json).main.apiKey }}"
+  when: servarr_ct.name == 'jellyseerr'
   no_log: true

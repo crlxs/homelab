@@ -75,3 +75,14 @@ servarr_lxcs:
     memory: 4096 # Next.js source build needs more RAM than normal operation.
     disk: 16
     media: false
+  - name: jellyfin
+    vmid: 126
+    ip: 192.168.1.206/24
+    cores: 4
+    memory: 4096
+    disk: 16
+    media: true
+
+# Share the host's NVIDIA GPU; only matching userspace drivers are installed
+# inside Jellyfin. Host kernel modules/drivers are not changed by the role.
+jellyfin_nvidia_enabled: true

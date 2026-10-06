@@ -1,0 +1,16 @@
+# Copy to inventory/servarr.local.yaml (ignored by Git), chmod 600, and fill in.
+# This file may also be encrypted with ansible-vault; run with --ask-vault-pass.
+vault_proxmox_api_token_secret: ""
+servarr_ui_password: ""
+sabnzbd_ui_username: admin
+sabnzbd_provider_name: primary
+sabnzbd_provider_host: ""
+sabnzbd_provider_port: 563
+sabnzbd_provider_username: ""
+sabnzbd_provider_password: ""
+sabnzbd_provider_connections: 10
+nzbgeek_api_key: ""
+# Jellyfin creates an admin account and Jellyseerr uses it on initial setup.
+# If managing an already configured server, supply its existing admin credentials.
+jellyfin_admin_username: admin
+# jellyfin_admin_password: "" # Defaults to servarr_ui_password.

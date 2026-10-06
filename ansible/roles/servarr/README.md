@@ -45,6 +45,7 @@ gateway, DNS, bridge and root/template storage. Defaults are:
 | Prowlarr | 123 | 192.168.1.203 | 9696 | none |
 | SABnzbd | 124 | 192.168.1.204 | 8081 | read/write |
 | Jellyseerr | 125 | 192.168.1.205 | 5055 | none |
+| Jellyfin | 126 | 192.168.1.206 | 8096 | read/write |
 
 Every LXC also exposes a Prometheus node exporter on 9100. These exporters
 provide guest OS metrics; their metric names differ from cAdvisor, so adjust
@@ -74,6 +75,26 @@ Jellyseerr is retained at v2.7.3, built with Node 22 and pnpm 9.15.9; this is
 deliberately not an implicit migration to its successor Seerr. Its 4 GiB RAM
 default supports the first source build. The role does not upgrade an existing
 Jellyseerr checkout automatically.
+The role applies a small compatibility patch to use the standard `Authorization`
+header in Jellyseerr's source and compiled Jellyfin API client, as Jellyfin 12
+no longer accepts the legacy `X-Emby-Authorization` header. Rebuilding the
+application retains the patched source; the playbook reapplies it idempotently.
+
+Jellyfin uses its official Debian repository and `jellyfin-ffmpeg8`. With
+`jellyfin_nvidia_enabled: true`, the role detects the host NVIDIA driver,
+passes `/dev/nvidia*` devices into the unprivileged Jellyfin LXC using Proxmox
+`devN` entries (guest ownership `media:media`, mode 0660), and installs exactly
+matching userspace libraries **only inside that LXC**. It does not install a
+host driver, a guest kernel module, or chmod host devices. A real H.264 NVENC
+smoke test runs as `media` before deployment succeeds. Upgrade the host driver
+separately, then rerun the playbook to update the guest libraries. The NVIDIA
+download URL/checksum can be overridden for a pinned/local installer.
+
+The default decoding codec list targets the current RTX 3060 Ti; override
+`jellyfin_nvidia_decoding_codecs` for another GPU. AV1 encoding is not enabled.
+Disable `jellyfin_nvidia_enabled` for software-only installations; disabling
+does not remove existing passthrough devices or reset manually chosen encoding
+settings. No changes are made to other GPU-using LXCs.
 
 ## Storage and migration
 
@@ -88,9 +109,11 @@ existing filesystem out of the VM before using it on the host; never mount
 the same block filesystem in the VM and host at the same time.
 
 ```text
-/opt/media                         # one host filesystem and one LXC bind mount
+/media-pool                        # configured host ZFS mount; /opt/media in guests
 ├── movies                         # Radarr root folder
 ├── tv                             # Sonarr root folder
+├── transcodes
+│   └── jellyfin                   # temporary transcoding, not the SSD root disk
 └── downloads
     ├── incomplete                 # SAB working files
     └── complete
@@ -101,8 +124,11 @@ the same block filesystem in the VM and host at the same time.
 
 One mount preserves consistent absolute paths and allows hardlinks/atomic
 renames between downloads and the libraries. Prowlarr/Jellyseerr do not need
-the media filesystem. A future Jellyfin LXC can bind-mount this same tree
-read-only and use the same UID/GID mapping, without NFS.
+the media filesystem. Jellyfin uses the same UID/GID mapping and single bind
+mount, without NFS. Its mount is read/write because temporary transcoding files
+live on the same HDD filesystem; media deletion is not enabled by the bootstrap.
+For ZFS, leave `servarr_media_uuid: ""`; ZFS manages `/media-pool` independently
+of `/etc/fstab`. The role checks the mount and does not format/import the pool.
 
 For migration, back up `/opt/servarr` from the VM and stop the old stack before
 moving its media filesystem. Prepare/mount storage on PVE and run the playbook
@@ -129,29 +155,69 @@ in normal CT backups.
 
 ## Bootstrap and secrets
 
+Copy `inventory/servarr.local.yaml.example` to `inventory/servarr.local.yaml`,
+run `chmod 600 inventory/servarr.local.yaml`, and fill it in locally. The playbook
+automatically loads this Git-ignored file without prompts; no secret belongs
+in role defaults or tracked inventory. Existing copies are never overwritten.
+Git ignore is not encryption: for persistent secrets, encrypt the file:
+
+```sh
+ansible-vault encrypt inventory/servarr.local.yaml
+ansible-playbook playbooks/01-deploy-servarr.yaml --ask-vault-pass
+```
+
+Alternatively, use a protected Vault password source with `--vault-password-file`
+to avoid even that prompt, or provide encrypted extra vars. Keep Vault password
+files outside Git. Without encryption, the local file remains plaintext but
+is accessible only to its owner; do not use `git add -f` on it.
+
 The bootstrap waits for readiness with bounded timeouts, reads app API keys
-into Ansible memory, and sends credentials to its shell script on stdin with
+into Ansible memory, and sends credentials to its scripts on stdin with
 `no_log: true`. No standalone plaintext UI-password file or transferred
-config/API-key file is left on PVE or the controller. Applications still
+config/API-key file is left on PVE or in the guests. Applications still
 persist their own required credentials/API keys in their normal private
 configuration (notably SABnzbd's provider credentials).
 
 The first run creates UI accounts using one shared password, configures
 SABnzbd folders/categories/provider (SSL defaults to on for port 563), adds
 SABnzbd to all three Arr apps, registers Radarr/Sonarr in Prowlarr and sets
-`movies`/`tv` as their root folders. SAB API calls originate on localhost,
+`movies`/`tv` as their root folders. It also creates NZBGeek from Prowlarr's
+native Newznab schema and an enabled sync profile, then synchronizes indexers
+to the registered apps. SAB API calls originate on localhost,
 retaining its hostname protections. Service integrations use real LXC IPs.
 
 Reruns preserve existing UI passwords and provider passwords, avoid duplicate
-root folders/clients/applications, and reconcile bootstrap-owned connection
+root folders/clients/applications/indexers, and reconcile bootstrap-owned connection
 fields when IPs or API keys change. Differently named SAB clients remain
 user-managed. Provider non-secret settings and media paths are reconciled;
 password rotation is an explicit app UI/API operation. Supplied passwords
 are only used to create accounts/provider credentials when absent.
+When an Arr API masks its stored key, the bootstrap uses the provider's test
+endpoint to verify that the saved connection works instead of rewriting the
+key on every run. A stale connection is repaired with the current source key;
+no plaintext key cache is created. Empty optional fields and schema metadata
+returned by the APIs do not cause spurious updates.
 
-Jellyseerr is installed and started, but retains its original first-run wizard
-for connecting to Jellyfin and choosing quality profiles. Prowlarr indexers
-also need adding, as in the previous stack.
+The Jellyfin bootstrap creates its initial administrator using the shared UI
+password (override `jellyfin_admin_username`/`jellyfin_admin_password` in the
+private file if desired), completes its wizard, adds Movies/TV Shows libraries,
+sets the transcoding directory and enables NVENC. It creates Jellyseerr's initial
+Jellyfin administrator and server API token, enables those libraries and completes
+the connection wizard. Sign into Jellyseerr using the Jellyfin login option and
+that account. When no existing service settings are present, Radarr and Sonarr
+are added as default request services using their `HD-1080p` quality profiles
+and `movies`/`tv` roots. Override `jellyseerr_radarr_quality_profile_name` and
+`jellyseerr_sonarr_quality_profile_name` for another first-run choice. Existing
+Jellyseerr service/quality choices are never replaced on reruns.
+
+Reruns preserve established accounts, extra libraries, encoding settings other
+than the managed path/NVENC fields, and other Jellyseerr library selections.
+An existing different Jellyfin server connection is rejected rather than
+silently replaced. Update the private file when changing the Jellyfin admin
+password in its UI, since the API bootstrap authenticates with it on reruns.
+NZBGeek's managed URL/API key are reconciled (including key rotation); other
+indexer fields are preserved. A differently named existing NZBGeek remains
+user-managed and is not duplicated.
 
 ## Validation
 
@@ -175,3 +241,5 @@ Upstream references:
 - [Servarr native installer reference](https://github.com/Servarr/Wiki/blob/master/servarr/servarr-install-script.sh)
 - [SABnzbd Debian installation](https://sabnzbd.org/wiki/installation/install-debian)
 - [Jellyseerr pinned build requirements](https://github.com/Fallenbagel/jellyseerr/blob/v2.7.3/package.json)
+- [Jellyfin NVIDIA acceleration](https://jellyfin.org/docs/general/post-install/transcoding/hardware-acceleration/nvidia/)
+- [Community Jellyfin installer reference](https://github.com/community-scripts/ProxmoxVE/blob/main/install/jellyfin-install.sh)

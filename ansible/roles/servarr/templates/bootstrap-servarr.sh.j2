@@ -11,6 +11,8 @@ SABNZBD_PORT={{ sabnzbd_web_port | string | quote }}
 SERVARR_UI_USERNAME={{ servarr_ui_username | quote }}
 RADARR_ROOT_FOLDER={{ radarr_root_folder | quote }}
 SONARR_ROOT_FOLDER={{ sonarr_root_folder | quote }}
+NZBGEEK_NAME={{ nzbgeek_indexer_name | quote }}
+NZBGEEK_URL={{ nzbgeek_base_url | quote }}
 changed=0
 bootstrap_input="$(cat)"
 value() { printf '%s' "$bootstrap_input" | jq -er --arg key "$1" '.[$key]'; }
@@ -46,6 +48,7 @@ configure_auth() {
   id="$(printf '%s' "$config" | jq -r '.id')"
   printf '%s' "$updated" | request -X PUT -H 'Content-Type: application/json' \
     -H "X-Api-Key: $key" --data-binary @- "$url/api/$version/config/host/$id" >/dev/null
+  printf 'Updated Arr authentication\n' >&2
   changed=1
 }
 
@@ -53,7 +56,61 @@ configure_auth() {
 merge_fields() {
   jq --argjson fields "$1" '
     .fields = ((.fields // []) as $old |
-      [$old[] | select(.name as $n | $fields | all(.name != $n))] + $fields)'
+      [$old[] | .name as $n | ($fields | map(select(.name == $n))) as $new |
+        if ($new | length) > 0 then .value = $new[0].value else . end] +
+      [$fields[] | .name as $n | select($old | all(.name != $n))])'
+}
+
+# Arr may omit empty values on GET and add schema metadata. Compare only the
+# desired field values, treating an omitted/null optional string as empty.
+fields_match() {
+  jq -e --argjson wanted "$1" '(.fields // []) as $current | $wanted | all(
+    .name as $name | .value as $value |
+    ($current | map(select(.name == $name))[0].value) as $old |
+    if $name == "apiKey" and $old == "********" then true
+    else (if $old == null then "" else $old end) == $value end)' >/dev/null
+}
+
+# Providers return a mask instead of the saved key. Their read-only test API
+# resolves the mask back to the stored secret: keep working credentials, repair
+# stale ones when the source service's key has been rotated, without a key file.
+provider_matches() {
+  current="$1"; fields="$2"; url="$3"; version="$4"; key="$5"; resource="$6"
+  if ! printf '%s' "$current" | fields_match "$fields"; then return 1; fi
+  if printf '%s' "$current" | jq -e 'any(.fields[]; .name == "apiKey" and .value == "********")' >/dev/null; then
+    printf '%s' "$current" | request -X POST -H 'Content-Type: application/json' \
+      -H "X-Api-Key: $key" --data-binary @- "$url/api/$version/$resource/test" >/dev/null 2>&1
+  fi
+}
+
+register_nzbgeek() {
+  existing="$(request -H "X-Api-Key: $prowlarr_key" "$PROWLARR_URL/api/v1/indexer")"
+  current="$(printf '%s' "$existing" | jq -c --arg name "$NZBGEEK_NAME" \
+    '[.[] | select(.name == $name and .implementation == "Newznab")][0] // empty')"
+  # Preserve a differently named, manually configured NZBGeek indexer.
+  if [ -z "$current" ] && printf '%s' "$existing" | jq -e --arg url "$NZBGEEK_URL" \
+    'any(.[]; .implementation == "Newznab" and any(.fields[]; .name == "baseUrl" and .value == $url))' >/dev/null; then return; fi
+  fields="$(jq -n --arg url "$NZBGEEK_URL" --arg key "$(value nzbgeek_api_key)" \
+    '[{name: "baseUrl", value: $url}, {name: "apiKey", value: $key}]')"
+  if [ -n "$current" ]; then
+    updated="$(printf '%s' "$current" | merge_fields "$fields")"
+    if provider_matches "$current" "$fields" "$PROWLARR_URL" v1 "$prowlarr_key" indexer; then return; fi
+    method=PUT; endpoint="$PROWLARR_URL/api/v1/indexer/$(printf '%s' "$current" | jq -r '.id')"
+  else
+    schema="$(request -H "X-Api-Key: $prowlarr_key" "$PROWLARR_URL/api/v1/indexer/schema" |
+      jq -ce '[.[] | select(.implementation == "Newznab" and (.name | ascii_downcase) == "nzbgeek")][0] // error("NZBGeek schema not found")')"
+    profile="$(request -H "X-Api-Key: $prowlarr_key" "$PROWLARR_URL/api/v1/appprofile" |
+      jq -er '[.[] | select(.enableRss and .enableAutomaticSearch and .enableInteractiveSearch)][0].id // error("No enabled indexer sync profile")')"
+    updated="$(printf '%s' "$schema" | merge_fields "$fields" |
+      jq --arg name "$NZBGEEK_NAME" --argjson profile "$profile" 'del(.id) | .name = $name | .appProfileId = $profile | .enable = true')"
+    method=POST; endpoint="$PROWLARR_URL/api/v1/indexer"
+  fi
+  printf '%s' "$updated" | request -X "$method" -H 'Content-Type: application/json' \
+    -H "X-Api-Key: $prowlarr_key" --data-binary @- "$endpoint" >/dev/null
+  printf '{"name":"ApplicationIndexerSync"}' | request -X POST -H 'Content-Type: application/json' \
+    -H "X-Api-Key: $prowlarr_key" --data-binary @- "$PROWLARR_URL/api/v1/command" >/dev/null
+  printf 'Updated NZBGeek indexer\n' >&2
+  changed=1
 }
 
 register_application() {
@@ -67,8 +124,7 @@ register_application() {
       {name: "apiKey", value: $api_key}, {name: "syncCategories", value: $categories}]')"
   if [ -n "$current" ]; then
     updated="$(printf '%s' "$current" | merge_fields "$fields")"
-    if [ "$(printf '%s' "$current" | jq -cS '.fields | sort_by(.name)')" = \
-         "$(printf '%s' "$updated" | jq -cS '.fields | sort_by(.name)')" ]; then return; fi
+    if provider_matches "$current" "$fields" "$PROWLARR_URL" v1 "$prowlarr_key" applications; then return; fi
     id="$(printf '%s' "$current" | jq -r '.id')"
     method=PUT; endpoint="$PROWLARR_URL/api/v1/applications/$id"
   else
@@ -79,6 +135,7 @@ register_application() {
   fi
   printf '%s' "$updated" | request -X "$method" -H 'Content-Type: application/json' \
     -H "X-Api-Key: $prowlarr_key" --data-binary @- "$endpoint" >/dev/null
+  printf 'Updated Prowlarr application\n' >&2
   changed=1
 }
 
@@ -95,8 +152,7 @@ register_download_client() {
       {name: "urlBase", value: ""}, {name: "apiKey", value: $api_key}, {name: $category_field, value: $category}]')"
   if [ -n "$current" ]; then
     updated="$(printf '%s' "$current" | merge_fields "$fields")"
-    if [ "$(printf '%s' "$current" | jq -cS '.fields | sort_by(.name)')" = \
-         "$(printf '%s' "$updated" | jq -cS '.fields | sort_by(.name)')" ]; then return; fi
+    if provider_matches "$current" "$fields" "$url" "$version" "$key" downloadclient; then return; fi
     id="$(printf '%s' "$current" | jq -r '.id')"
     method=PUT; endpoint="$url/api/$version/downloadclient/$id"
   else
@@ -108,6 +164,7 @@ register_download_client() {
   fi
   printf '%s' "$updated" | request -X "$method" -H 'Content-Type: application/json' \
     -H "X-Api-Key: $key" --data-binary @- "$endpoint" >/dev/null
+  printf 'Updated Arr download client\n' >&2
   changed=1
 }
 
@@ -117,6 +174,7 @@ ensure_root_folder() {
   if printf '%s' "$existing" | jq -e --arg path "$path" 'any(.[]; .path == $path)' >/dev/null; then return; fi
   jq -n --arg path "$path" '{path: $path}' | request -X POST -H 'Content-Type: application/json' \
     -H "X-Api-Key: $key" --data-binary @- "$url/api/v3/rootfolder" >/dev/null
+  printf 'Updated Arr root folder\n' >&2
   changed=1
 }
 
@@ -137,6 +195,7 @@ sabnzbd_set_misc() {
     '{mode: "set_config", section: "misc", keyword: $keyword, value: $value}')"
   response="$(sabnzbd_request "$query")"
   printf '%s' "$response" | jq -e '.status != false and .config != null' >/dev/null
+  printf 'Updated SABnzbd misc %s\n' "$keyword" >&2
   changed=1
 }
 
@@ -156,6 +215,7 @@ sabnzbd_set_entry() {
     {mode: "set_config", section: $section}')"
   response="$(sabnzbd_request "$query")"
   printf '%s' "$response" | jq -e '.status != false and .config != null' >/dev/null
+  printf 'Updated SABnzbd %s entry\n' "$section" >&2
   changed=1
 }
 
@@ -198,4 +258,5 @@ register_download_client "$SONARR_URL" v3 "$sonarr_key" tvCategory "$(value sabn
 register_download_client "$PROWLARR_URL" v1 "$prowlarr_key" category "$(value sabnzbd_prowlarr_category)" false
 register_application Radarr Radarr RadarrSettings "$RADARR_URL" "$radarr_key" '[2000,2010,2020,2030,2040,2045,2050,2060]'
 register_application Sonarr Sonarr SonarrSettings "$SONARR_URL" "$sonarr_key" '[5000,5010,5020,5030,5040,5045,5050,5060]'
+register_nzbgeek
 if [ "$changed" -eq 1 ]; then printf 'CHANGED\n'; else printf 'OK\n'; fi

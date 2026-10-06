@@ -1,0 +1,27 @@
+- name: Install the Jellyfin and Jellyseerr API bootstrap
+  ansible.builtin.template:
+    src: bootstrap-jellyfin.py.j2
+    dest: "{{ servarr_conf_dir }}/bootstrap-jellyfin.py"
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Configure media libraries, transcoding and Jellyseerr in memory
+  ansible.builtin.command:
+    argv: [python3, "{{ servarr_conf_dir }}/bootstrap-jellyfin.py"]
+    stdin: >-
+      {{ hostvars[servarr_proxmox_host].servarr_bootstrap_values | combine({
+        'jellyseerr_api_key': hostvars['jellyseerr'].servarr_api_key,
+        'radarr_api_key': hostvars['radarr'].servarr_api_key,
+        'sonarr_api_key': hostvars['sonarr'].servarr_api_key
+      }) | to_json }}
+    stdin_add_newline: true
+  register: jellyfin_bootstrap_result
+  changed_when: "'CHANGED' in jellyfin_bootstrap_result.stdout"
+  failed_when: false
+  no_log: true
+
+- name: Report a safe Jellyfin bootstrap failure without credentials
+  ansible.builtin.assert:
+    that: jellyfin_bootstrap_result.rc == 0
+    fail_msg: "{{ jellyfin_bootstrap_result.stderr }}"

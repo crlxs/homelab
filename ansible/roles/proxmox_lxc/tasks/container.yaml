@@ -87,8 +87,10 @@
 - name: "{{ servarr_ct.name }} | Preserve snapshot identity mappings"
   ansible.builtin.assert:
     that:
-      - not servarr_ct_mapping_changed or (servarr_ct_config_file.content | b64decode | regex_findall('(?m)^\\[') | length == 0)
+      - not servarr_ct_mapping_changed or (servarr_ct_config_file.content | b64decode | regex_findall(servarr_snapshot_pattern) | length == 0)
     fail_msg: UID/GID mappings cannot be changed while this container has snapshots. Keep its current IDs or use a new CT.
+  vars:
+    servarr_snapshot_pattern: '(?m)^\['
 
 - name: "{{ servarr_ct.name }} | Read container state"
   ansible.builtin.command:
@@ -96,12 +98,23 @@
   register: servarr_ct_status
   changed_when: false
 
+- name: "{{ servarr_ct.name }} | Initialize GPU configuration comparison"
+  ansible.builtin.set_fact:
+    servarr_ct_gpu_changed: false
+    servarr_ct_gpu_args: []
+
+- name: "{{ servarr_ct.name }} | Compare NVIDIA passthrough device configuration"
+  ansible.builtin.include_tasks: gpu-devices.yaml
+  when:
+    - servarr_ct.name == 'jellyfin'
+    - jellyfin_nvidia_enabled | bool
+
 - name: "{{ servarr_ct.name }} | Stop only when offline configuration must change"
   ansible.builtin.command:
     argv: [pct, shutdown, "{{ servarr_ct.vmid | string }}", --timeout, '60']
   when:
     - "'running' in servarr_ct_status.stdout"
-    - servarr_ct_mapping_changed or servarr_ct_settings_changed
+    - servarr_ct_mapping_changed or servarr_ct_settings_changed or servarr_ct_gpu_changed
   changed_when: true
 
 - name: "{{ servarr_ct.name }} | Remove outdated UID mappings"
@@ -129,14 +142,14 @@
           '--cores', servarr_ct.cores | string, '--memory', servarr_ct.memory | string,
           '--onboot', '1', '--nameserver', servarr_lxc_nameserver,
           '--net0', 'name=eth0,bridge=' ~ servarr_lxc_bridge ~ ',ip=' ~ servarr_ct.ip ~ ',gw=' ~ servarr_lxc_gateway]
-         + (['--mp0', servarr_ct_mount] if servarr_ct.media else []) }}
-  when: servarr_ct_settings_changed
+         + (['--mp0', servarr_ct_mount] if servarr_ct.media else []) + servarr_ct_gpu_args }}
+  when: servarr_ct_settings_changed or servarr_ct_gpu_changed
   changed_when: true
 
 - name: "{{ servarr_ct.name }} | Start container if stopped"
   ansible.builtin.command:
     argv: [pct, start, "{{ servarr_ct.vmid | string }}"]
-  when: "'running' not in servarr_ct_status.stdout or servarr_ct_mapping_changed or servarr_ct_settings_changed"
+  when: "'running' not in servarr_ct_status.stdout or servarr_ct_mapping_changed or servarr_ct_settings_changed or servarr_ct_gpu_changed"
   changed_when: true
 
 - name: "{{ servarr_ct.name }} | Wait for the guest network"
@@ -163,4 +176,6 @@
     servarr_ct: "{{ servarr_ct }}"
     servarr_endpoints: "{{ servarr_endpoints }}"
     servarr_proxmox_host: "{{ inventory_hostname }}"
+    jellyfin_nvidia_enabled: "{{ jellyfin_nvidia_enabled }}"
+    jellyfin_nvidia_driver_version: "{{ jellyfin_nvidia_driver_version | default('') }}"
   changed_when: false

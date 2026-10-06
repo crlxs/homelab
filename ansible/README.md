@@ -1,15 +1,16 @@
 # Ansible setup for homelab provisioning on Proxmox
 
-Servarr now runs as native systemd services in five unprivileged Debian 13
-LXCs: Radarr, Sonarr, Prowlarr, SABnzbd and Jellyseerr. Their lifecycle is
+Servarr now runs as native systemd services in six unprivileged Debian 13
+LXCs: Radarr, Sonarr, Prowlarr, SABnzbd, Jellyseerr and Jellyfin. Their lifecycle is
 created through the Proxmox API; host-only configuration uses SSH, and guest
 tasks use `community.proxmox.proxmox_pct_remote` through the same host SSH
 connection. No guest SSH service, Docker nesting or NFS is required.
 
-Media storage must be mounted at `/opt/media` **on the Proxmox host**; either
-mount it beforehand or configure `servarr_media_uuid` for an existing filesystem.
-The playbook creates `movies`, `tv` and `downloads/{incomplete,complete}` there
-and bind-mounts the whole tree into Radarr, Sonarr and SABnzbd at `/opt/media`.
+Media storage must be mounted at `servarr_host_media_dir` **on the Proxmox host**
+(currently the ZFS mount `/media-pool`); ZFS needs no UUID/fstab entry. For other
+filesystems, mount them beforehand or configure `servarr_media_uuid`.
+The playbook creates movies, TV, downloads and Jellyfin transcode directories
+and bind-mounts the whole tree into Radarr, Sonarr, SABnzbd and Jellyfin at `/opt/media`.
 All applications run as `media`, with UID/GID 1500 mapped directly to the host
 account. See [the Servarr deployment guide](roles/servarr/README.md) for the
 configuration, migration steps and backup considerations.
@@ -18,15 +19,18 @@ configuration, migration steps and backup considerations.
 ansible-galaxy collection install -r requirements.yaml
 sudo apt update
 sudo apt install python3-proxmoxer python3-requests python3-paramiko
-export PROXMOX_TOKEN_SECRET='...'
+# On first use only: copy, chmod 600, then edit credentials locally.
+cp -n inventory/servarr.local.yaml.example inventory/servarr.local.yaml
+chmod 600 inventory/servarr.local.yaml
 ansible-playbook playbooks/01-deploy-servarr.yaml
 ```
 
 Check the LXC IDs/IPs/storage in `inventory/group_vars/proxmox.yaml` and media
 IDs/path in `inventory/group_vars/all.yaml` before running. The complete
-playbook provisions, installs, starts and connects the applications. It asks
-for one shared UI password and the Usenet provider credentials, without
-writing a separate plaintext password file. Per-LXC Prometheus node exporters
+playbook provisions, installs, starts and connects the applications. It loads
+the Git-ignored private file without repeated prompts; encrypt it with Ansible
+Vault for persistent secret storage. Jellyfin's NVIDIA support and NZBGeek are
+bootstrapped automatically. Per-LXC Prometheus node exporters
 on port 9100 replace the Docker-specific cAdvisor service.
 
 The old Servarr VM is not deleted or stopped automatically. `proxmox_vms` is

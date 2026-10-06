@@ -1,0 +1,42 @@
+- name: Install Jellyfin repository prerequisites
+  ansible.builtin.apt:
+    name: [gpg, libjemalloc2]
+    state: present
+
+- name: Create the APT keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Install Jellyfin's repository signing key
+  ansible.builtin.get_url:
+    url: https://repo.jellyfin.org/jellyfin_team.gpg.key
+    dest: /etc/apt/keyrings/jellyfin.asc
+    mode: '0644'
+
+- name: Configure the official Jellyfin Debian repository
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/jellyfin.asc] https://repo.jellyfin.org/debian trixie main
+    filename: jellyfin
+    state: present
+
+- name: Install Jellyfin server, web UI and hardware-enabled FFmpeg
+  ansible.builtin.apt:
+    name: [jellyfin-server, jellyfin-web, jellyfin-ffmpeg8]
+    state: present
+    update_cache: true
+    policy_rc_d: 101
+
+- name: Create media-owned Jellyfin runtime directories
+  ansible.builtin.file:
+    path: "{{ jellyfin_conf_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: '0750'
+  loop: [config, cache, log]
+
+- name: Install and verify NVIDIA acceleration without kernel modules
+  ansible.builtin.include_tasks: jellyfin-nvidia.yaml
+  when: jellyfin_nvidia_enabled | bool

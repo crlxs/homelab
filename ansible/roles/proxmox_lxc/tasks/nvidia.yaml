@@ -1,0 +1,33 @@
+- name: Read the NVIDIA kernel driver version on the Proxmox host
+  ansible.builtin.command:
+    argv: [nvidia-smi, --query-gpu=driver_version, '--format=csv,noheader']
+  register: servarr_nvidia_version
+  changed_when: false
+
+- name: Record the exact host driver version for Jellyfin userspace
+  ansible.builtin.set_fact:
+    jellyfin_nvidia_driver_version: "{{ servarr_nvidia_version.stdout_lines | unique | first | trim }}"
+
+- name: Require a consistent NVIDIA driver version across host GPUs
+  ansible.builtin.assert:
+    that:
+      - servarr_nvidia_version.stdout_lines | unique | length == 1
+      - jellyfin_nvidia_driver_version is match('^[0-9]+[.][0-9]+([.][0-9]+)?$')
+
+- name: Discover existing NVIDIA character devices including capability nodes
+  ansible.builtin.command:
+    argv: [find, /dev, -maxdepth, '2', -type, c, -name, 'nvidia*', -print]
+  register: servarr_nvidia_nodes
+  changed_when: false
+
+- name: Record stable NVIDIA device paths
+  ansible.builtin.set_fact:
+    jellyfin_nvidia_devices: "{{ servarr_nvidia_nodes.stdout_lines | sort }}"
+
+- name: Require CUDA and NVIDIA control device nodes
+  ansible.builtin.assert:
+    that:
+      - "'/dev/nvidia0' in jellyfin_nvidia_devices"
+      - "'/dev/nvidiactl' in jellyfin_nvidia_devices"
+      - "'/dev/nvidia-uvm' in jellyfin_nvidia_devices"
+    fail_msg: The host NVIDIA driver must be loaded with nvidia-uvm before Jellyfin GPU deployment.

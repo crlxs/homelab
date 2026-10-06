@@ -2,7 +2,7 @@
   ansible.builtin.assert:
     that:
       - groups['proxmox'] | length == 1
-      - servarr_lxcs | map(attribute='name') | sort == ['jellyseerr', 'prowlarr', 'radarr', 'sabnzbd', 'sonarr']
+      - servarr_lxcs | map(attribute='name') | sort == ['jellyfin', 'jellyseerr', 'prowlarr', 'radarr', 'sabnzbd', 'sonarr']
       - servarr_lxcs | map(attribute='vmid') | unique | length == servarr_lxcs | length
       - servarr_lxcs | map(attribute='ip') | unique | length == servarr_lxcs | length
       - servarr_uid | int > 0 and servarr_uid | int < 65535
@@ -38,7 +38,11 @@
       - sabnzbd_provider_name | length > 0
       - sabnzbd_ui_username | length > 0
       - sabnzbd_provider_port | int != 563 or sabnzbd_provider_ssl | default(true) | bool
+      - nzbgeek_api_key | default('') | length > 0
+      - jellyfin_admin_password | length > 0
+    fail_msg: Fill in inventory/servarr.local.yaml or supply the required credentials through Ansible Vault/extra vars.
   no_log: true
+  tags: preflight
 
 - name: Keep bootstrap credentials in memory for the final play
   ansible.builtin.set_fact:
@@ -52,6 +56,9 @@
       sabnzbd_provider_username: "{{ sabnzbd_provider_username }}"
       sabnzbd_provider_password: "{{ sabnzbd_provider_password }}"
       sabnzbd_provider_connections: "{{ sabnzbd_provider_connections }}"
+      nzbgeek_api_key: "{{ nzbgeek_api_key }}"
+      jellyfin_admin_username: "{{ jellyfin_admin_username }}"
+      jellyfin_admin_password: "{{ jellyfin_admin_password }}"
   no_log: true
 
 - name: Validate the optional media filesystem identifier
@@ -126,13 +133,13 @@
     owner: "{{ servarr_user }}"
     group: "{{ servarr_group }}"
     mode: '2775'
-  loop: ['', /movies, /tv, /downloads, /downloads/incomplete, /downloads/complete, /downloads/complete/radarr, /downloads/complete/sonarr, /downloads/complete/prowlarr]
+  loop: ['', /movies, /tv, /downloads, /downloads/incomplete, /downloads/complete, /downloads/complete/radarr, /downloads/complete/sonarr, /downloads/complete/prowlarr, /transcodes, /transcodes/jellyfin]
 
 - name: Read the media and download filesystem identities
   ansible.builtin.stat:
     path: "{{ servarr_host_media_dir }}{{ item }}"
     follow: false
-  loop: ['', /movies, /tv, /downloads/incomplete, /downloads/complete]
+  loop: ['', /movies, /tv, /downloads/incomplete, /downloads/complete, /transcodes/jellyfin]
   register: servarr_media_paths
 
 - name: Require real directories on one filesystem for atomic imports
@@ -213,6 +220,10 @@
   loop: "{{ servarr_lxcs }}"
   loop_control:
     label: "{{ item.name }}"
+
+- name: Discover the host NVIDIA driver and devices
+  ansible.builtin.include_tasks: nvidia.yaml
+  when: jellyfin_nvidia_enabled | bool
 
 - name: Provision and configure each native application container
   ansible.builtin.include_tasks: container.yaml

@@ -1,0 +1,68 @@
+- name: Require the host's discovered NVIDIA driver version
+  ansible.builtin.assert:
+    that:
+      - jellyfin_nvidia_driver_version | length > 0
+
+- name: Read the installed NVIDIA userspace driver version
+  ansible.builtin.shell: |
+    if command -v nvidia-smi >/dev/null 2>&1; then
+      nvidia-smi --query-gpu=driver_version --format=csv,noheader
+    fi
+  register: jellyfin_installed_nvidia
+  changed_when: false
+  failed_when: false
+
+- name: Download NVIDIA's userspace installer matching the host kernel driver
+  ansible.builtin.get_url:
+    url: >-
+      {{ jellyfin_nvidia_driver_url if jellyfin_nvidia_driver_url | length > 0
+         else 'https://us.download.nvidia.com/XFree86/Linux-x86_64/' ~ jellyfin_nvidia_driver_version
+         ~ '/NVIDIA-Linux-x86_64-' ~ jellyfin_nvidia_driver_version ~ '.run' }}
+    dest: "/var/cache/NVIDIA-Linux-x86_64-{{ jellyfin_nvidia_driver_version }}.run"
+    checksum: "{{ jellyfin_nvidia_driver_checksum if jellyfin_nvidia_driver_checksum | length > 0 else omit }}"
+    mode: '0700'
+    timeout: 300
+  when: jellyfin_installed_nvidia.stdout | trim != jellyfin_nvidia_driver_version
+
+- name: Install matching userspace libraries only inside the LXC
+  ansible.builtin.command:
+    argv:
+      - /bin/sh
+      - "/var/cache/NVIDIA-Linux-x86_64-{{ jellyfin_nvidia_driver_version }}.run"
+      - --silent
+      - --no-kernel-modules
+      - --no-nouveau-check
+      - --no-x-check
+      - --no-install-compat32-libs
+  when: jellyfin_installed_nvidia.stdout | trim != jellyfin_nvidia_driver_version
+  changed_when: true
+  notify: Restart native Servarr application
+
+- name: Verify NVIDIA access as the Jellyfin service account
+  ansible.builtin.command:
+    argv: [runuser, -u, "{{ servarr_user }}", --, nvidia-smi, '--query-gpu=name,driver_version', '--format=csv,noheader']
+  register: jellyfin_gpu_verification
+  changed_when: false
+  failed_when: jellyfin_nvidia_driver_version not in jellyfin_gpu_verification.stdout
+
+- name: Verify real NVENC encoding using Jellyfin's FFmpeg as media
+  ansible.builtin.command:
+    argv:
+      - runuser
+      - -u
+      - "{{ servarr_user }}"
+      - --
+      - /usr/lib/jellyfin-ffmpeg/ffmpeg
+      - -hide_banner
+      - -loglevel
+      - error
+      - -f
+      - lavfi
+      - -i
+      - testsrc2=duration=1:size=1280x720:rate=30
+      - -c:v
+      - h264_nvenc
+      - -f
+      - 'null'
+      - '-'
+  changed_when: false

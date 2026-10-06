@@ -19,7 +19,7 @@ sabnzbd_provider_ssl_verify: 3
 sabnzbd_provider_priority: 0
 timezone: Etc/UTC
 servarr_ui_username: admin
-# Provided interactively by playbooks/01-deploy-servarr.yaml.
+# Provided through the private controller file, Vault or extra vars.
 servarr_ui_password: ""
 
 servarr_ports:
@@ -28,6 +28,7 @@ servarr_ports:
   prowlarr: 9696
   sabnzbd: "{{ sabnzbd_web_port }}"
   jellyseerr: 5055
+  jellyfin: 8096
 
 # Official stable Linux binaries, downloaded only on first installation.
 # Override a URL and checksum to pin an exact application release.
@@ -41,3 +42,20 @@ servarr_arr_checksums: {}
 # Retain the existing Jellyseerr application rather than migrate to Seerr.
 jellyseerr_version: v2.7.3
 jellyseerr_pnpm_version: 9.15.9
+
+jellyfin_conf_dir: "{{ servarr_conf_dir }}/jellyfin"
+jellyfin_nvidia_enabled: true
+# Empty selects NVIDIA's installer matching the detected host driver version.
+jellyfin_nvidia_driver_url: ""
+jellyfin_nvidia_driver_checksum: ""
+jellyfin_transcode_dir: "{{ media_dir }}/transcodes/jellyfin"
+jellyfin_server_name: Homelab
+jellyfin_admin_username: admin
+jellyfin_admin_password: "{{ servarr_ui_password }}"
+jellyseerr_admin_email: admin@homelab.local
+jellyseerr_radarr_quality_profile_name: HD-1080p
+jellyseerr_sonarr_quality_profile_name: HD-1080p
+nzbgeek_indexer_name: NZBGeek
+nzbgeek_base_url: https://api.nzbgeek.info
+# First-run hardware decoding defaults; override for a different NVIDIA GPU.
+jellyfin_nvidia_decoding_codecs: [h264, hevc, mpeg2video, vc1, vp8, vp9, av1]

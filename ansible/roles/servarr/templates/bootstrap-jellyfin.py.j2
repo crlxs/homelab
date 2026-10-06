@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""One-shot native API bootstrap. Credentials stay in stdin and memory only."""
+import json
+import sys
+import time
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
+JELLYFIN_URL = {{ ('http://' ~ servarr_endpoints.jellyfin ~ ':' ~ servarr_ports.jellyfin) | to_json }}
+JELLYSEERR_URL = {{ ('http://' ~ servarr_endpoints.jellyseerr ~ ':' ~ servarr_ports.jellyseerr) | to_json }}
+SERVER_NAME = {{ jellyfin_server_name | to_json }}
+LIBRARIES = {{ [{'Name': 'Movies', 'Path': radarr_root_folder, 'Type': 'movies'}, {'Name': 'TV Shows', 'Path': sonarr_root_folder, 'Type': 'tvshows'}] | to_json }}
+TRANSCODE_PATH = {{ jellyfin_transcode_dir | to_json }}
+NVIDIA_ENABLED = {{ (jellyfin_nvidia_enabled | bool) | ternary('True', 'False') }}
+DECODING_CODECS = {{ jellyfin_nvidia_decoding_codecs | to_json }}
+ADMIN_EMAIL = {{ jellyseerr_admin_email | to_json }}
+ARR_SERVICES = {{ [
+  {'name': 'Radarr', 'app': 'radarr', 'host': servarr_endpoints.radarr, 'port': servarr_ports.radarr,
+   'root': radarr_root_folder, 'profile': jellyseerr_radarr_quality_profile_name},
+  {'name': 'Sonarr', 'app': 'sonarr', 'host': servarr_endpoints.sonarr, 'port': servarr_ports.sonarr,
+   'root': sonarr_root_folder, 'profile': jellyseerr_sonarr_quality_profile_name}
+] | to_json }}
+
+
+class API:
+    def __init__(self, base, headers=None):
+        self.base = base
+        self.headers = headers or {}
+
+    def request(self, path, data=None, method=None):
+        request = Request(self.base + path,
+                          data=None if data is None else json.dumps(data).encode(),
+                          headers={"Content-Type": "application/json", **self.headers},
+                          method=method or ("GET" if data is None else "POST"))
+        try:
+            with urlopen(request, timeout=60) as response:
+                body = response.read()
+                return json.loads(body) if body else None
+        except HTTPError as error:
+            # Never include response bodies, URLs with credentials or payloads.
+            raise RuntimeError(f"{path.split('?')[0]} returned HTTP {error.code}") from None
+        except (URLError, TimeoutError):
+            raise RuntimeError(f"{path.split('?')[0]} is unreachable") from None
+
+
+def bootstrap(credentials):
+    changed = False
+    jellyfin = API(JELLYFIN_URL, {
+        "Authorization": 'MediaBrowser Client="Ansible", Device="Ansible", DeviceId="ansible-bootstrap", Version="1.0"'
+    })
+    for attempt in range(60):
+        try:
+            info = jellyfin.request("/System/Info/Public")
+            break
+        except RuntimeError:
+            if attempt == 59:
+                raise
+            time.sleep(2)
+    if not info["StartupWizardCompleted"]:
+        jellyfin.request("/Startup/Configuration", {
+            "UICulture": "en-US", "MetadataCountryCode": "US",
+            "PreferredMetadataLanguage": "en", "ServerName": SERVER_NAME
+        })
+        first_user = jellyfin.request("/Startup/User")
+        if first_user.get("Name") == credentials["jellyfin_admin_username"]:
+            # Recover a partial first run without resetting its established user.
+            jellyfin.request("/Users/AuthenticateByName", {
+                "Username": credentials["jellyfin_admin_username"],
+                "Pw": credentials["jellyfin_admin_password"]
+            })
+        else:
+            jellyfin.request("/Startup/User", {
+                "Name": credentials["jellyfin_admin_username"],
+                "Password": credentials["jellyfin_admin_password"]
+            })
+        jellyfin.request("/Startup/RemoteAccess", {
+            "EnableRemoteAccess": True, "EnableAutomaticPortMapping": False
+        })
+        jellyfin.request("/Startup/Complete", {})
+        changed = True
+    # Do not reset an established admin account/password on reruns.
+    auth = jellyfin.request("/Users/AuthenticateByName", {
+        "Username": credentials["jellyfin_admin_username"],
+        "Pw": credentials["jellyfin_admin_password"]
+    })
+    if not auth["User"]["Policy"]["IsAdministrator"]:
+        raise RuntimeError("Jellyfin bootstrap requires an administrator account")
+    jellyfin.headers["Authorization"] += ', Token="' + auth["AccessToken"] + '"'
+    folders = jellyfin.request("/Library/VirtualFolders")
+    for library in LIBRARIES:
+        if any(library["Path"] in folder.get("Locations", []) for folder in folders):
+            continue
+        if any(folder["Name"] == library["Name"] for folder in folders):
+            raise RuntimeError("An existing Jellyfin library has the managed name but a different path; review it manually")
+        query = urlencode({"name": library["Name"], "collectionType": library["Type"],
+                           "refreshLibrary": "false"})
+        jellyfin.request("/Library/VirtualFolders?" + query, {
+            "LibraryOptions": {"PathInfos": [{"Path": library["Path"]}],
+                               "EnableRealtimeMonitor": True}
+        })
+        changed = True
+    folders = jellyfin.request("/Library/VirtualFolders")
+    encoding = jellyfin.request("/System/Configuration/encoding")
+    desired = {"TranscodingTempPath": TRANSCODE_PATH}
+    if NVIDIA_ENABLED:
+        desired.update({"HardwareAccelerationType": "nvenc", "EnableHardwareEncoding": True,
+                        "HardwareDecodingCodecs": DECODING_CODECS})
+    if any(encoding.get(key) != value for key, value in desired.items()):
+        jellyfin.request("/System/Configuration/encoding", {**encoding, **desired})
+        changed = True
+
+    jellyseerr = API(JELLYSEERR_URL, {"X-Api-Key": credentials["jellyseerr_api_key"]})
+    public = jellyseerr.request("/api/v1/settings/public")
+    if public.get("mediaServerType") not in (2, 4):
+        raise RuntimeError("Jellyseerr already uses a different media server type; no migration is performed automatically")
+    expected_host = JELLYFIN_URL.split("//", 1)[1].rsplit(":", 1)[0]
+    expected_port = int(JELLYFIN_URL.rsplit(":", 1)[1])
+    # Protected settings endpoints require the first admin to exist. The public
+    # mediaServerType lets us initialize it without a failing authenticated GET.
+    settings = ({"ip": "", "apiKey": ""} if public.get("mediaServerType") == 4
+                else jellyseerr.request("/api/v1/settings/jellyfin"))
+    if settings.get("ip") and (settings["ip"] != expected_host or settings.get("port") != expected_port):
+        raise RuntimeError("Jellyseerr already points to another media server; review it before changing the connection")
+    if not settings.get("apiKey"):
+        jellyseerr.request("/api/v1/auth/jellyfin", {
+            "username": credentials["jellyfin_admin_username"],
+            "password": credentials["jellyfin_admin_password"], "hostname": expected_host,
+            "port": expected_port, "urlBase": "", "useSsl": False,
+            "serverType": 2, "email": ADMIN_EMAIL
+        })
+        settings = jellyseerr.request("/api/v1/settings/jellyfin")
+        changed = True
+    managed_paths = {library["Path"] for library in LIBRARIES}
+    wanted_ids = {str(folder["ItemId"]) for folder in folders
+                  if managed_paths.intersection(folder.get("Locations", []))}
+    enabled_ids = {str(library["id"]) for library in settings.get("libraries", []) if library["enabled"]}
+    if not wanted_ids.issubset(enabled_ids):
+        query = urlencode({"sync": "true", "enable": ",".join(sorted(enabled_ids | wanted_ids))})
+        result = jellyseerr.request("/api/v1/settings/jellyfin/library?" + query)
+        if not wanted_ids.issubset({str(library["id"]) for library in result if library["enabled"]}):
+            raise RuntimeError("Jellyseerr did not enable both managed media libraries")
+        changed = True
+    for service in ARR_SERVICES:
+        path = "/api/v1/settings/" + service["app"]
+        # Existing service choices, profiles and credentials remain user-managed.
+        if jellyseerr.request(path):
+            continue
+        arr = API(f'http://{service["host"]}:{service["port"]}', {
+            "X-Api-Key": credentials[service["app"] + "_api_key"]
+        })
+        profiles = arr.request("/api/v3/qualityprofile")
+        profile = next((p for p in profiles if p["name"] == service["profile"]), None)
+        if profile is None:
+            raise RuntimeError(f'{service["name"]} does not have the configured quality profile; set jellyseerr_{service["app"]}_quality_profile_name')
+        payload = {
+            "name": service["name"], "hostname": service["host"], "port": service["port"],
+            "apiKey": credentials[service["app"] + "_api_key"], "useSsl": False,
+            "baseUrl": "", "activeProfileId": profile["id"], "activeProfileName": profile["name"],
+            "activeDirectory": service["root"], "isDefault": True, "is4k": False,
+            "tags": [], "syncEnabled": True, "preventSearch": False, "tagRequests": False,
+            "overrideRule": []
+        }
+        if service["app"] == "radarr":
+            payload["minimumAvailability"] = "released"
+        else:
+            payload.update({"seriesType": "standard", "animeSeriesType": "anime", "enableSeasonFolders": True})
+        jellyseerr.request(path, payload)
+        changed = True
+    if not public.get("initialized"):
+        jellyseerr.request("/api/v1/settings/initialize", {})
+        changed = True
+    # Read-only validation also checks the saved server token on unchanged runs.
+    jellyseerr.request("/api/v1/settings/jellyfin/users")
+    return changed
+
+
+if __name__ == "__main__":
+    try:
+        print("CHANGED" if bootstrap(json.load(sys.stdin)) else "OK")
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        sys.exit(1)
+    except Exception:
+        print("Unexpected Jellyfin bootstrap response; review the API schema without exposing credentials", file=sys.stderr)
+        sys.exit(1)

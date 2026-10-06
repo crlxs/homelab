@@ -9,3 +9,11 @@ servarr_lxc_nameserver: 192.168.1.1
 servarr_media_repair_ownership: false
 servarr_media_uuid: ""
 servarr_media_fstype: ext4
+
+sabnzbd_ui_username: admin
+sabnzbd_provider_name: primary
+sabnzbd_provider_port: 563
+sabnzbd_provider_connections: 10
+jellyfin_admin_username: admin
+jellyfin_admin_password: "{{ servarr_ui_password }}"
+jellyfin_nvidia_enabled: true

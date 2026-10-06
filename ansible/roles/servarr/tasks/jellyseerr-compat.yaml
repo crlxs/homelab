@@ -1,0 +1,11 @@
+# Jellyfin 12 removed legacy X-Emby-Authorization. Standard Authorization also
+# works on older Jellyfin and preserves Jellyseerr's media browser token format.
+- name: Use the supported Jellyfin authentication header in Jellyseerr
+  ansible.builtin.replace:
+    path: "{{ item }}"
+    regexp: 'X-Emby-Authorization'
+    replace: Authorization
+  loop:
+    - /opt/jellyseerr/server/api/jellyfin.ts
+    - /opt/jellyseerr/dist/api/jellyfin.js
+  notify: Restart native Servarr application

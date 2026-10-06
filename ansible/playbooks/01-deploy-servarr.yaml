@@ -2,37 +2,29 @@
   hosts: proxmox
   gather_facts: true
 
-  vars_prompt:
-    - name: servarr_ui_password
-      prompt: "Enter the password for the Servarr UI user"
-      private: true
-      confirm: true
-    - name: sabnzbd_ui_username
-      prompt: "Enter the SABnzbd UI username"
-      private: false
-      default: admin
-    - name: sabnzbd_provider_name
-      prompt: "Enter a name for the Usenet provider"
-      private: false
-      default: primary
-    - name: sabnzbd_provider_host
-      prompt: "Enter the Usenet provider hostname"
-      private: false
-    - name: sabnzbd_provider_port
-      prompt: "Enter the Usenet provider port"
-      private: false
-      default: "563"
-    - name: sabnzbd_provider_username
-      prompt: "Enter the Usenet provider username"
-      private: true
-    - name: sabnzbd_provider_password
-      prompt: "Enter the Usenet provider password"
-      private: true
-      confirm: true
-    - name: sabnzbd_provider_connections
-      prompt: "Enter the provider's allowed simultaneous connections"
-      private: false
-      default: "10"
+  pre_tasks:
+    - name: Locate the controller-local secrets file
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../inventory/servarr.local.yaml"
+      delegate_to: localhost
+      become: false
+      register: servarr_local_secrets
+      tags: always
+
+    - name: Require private permissions on the local secrets file
+      ansible.builtin.assert:
+        that:
+          - servarr_local_secrets.stat.mode == '0600'
+        fail_msg: Run chmod 600 inventory/servarr.local.yaml before deploying.
+      when: servarr_local_secrets.stat.exists
+      tags: always
+
+    - name: Load private credentials without interactive prompts
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../inventory/servarr.local.yaml"
+      when: servarr_local_secrets.stat.exists
+      no_log: true
+      tags: always
 
   roles:
     - role: proxmox_lxc
@@ -63,3 +55,8 @@
       ansible.builtin.include_role:
         name: servarr
         tasks_from: bootstrap.yaml
+
+    - name: Configure Jellyfin and connect Jellyseerr to its media server
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: jellyfin-bootstrap.yaml

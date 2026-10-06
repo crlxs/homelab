@@ -88,3 +88,6 @@
     owner: "{{ servarr_user }}"
     group: "{{ servarr_group }}"
     recurse: true
+
+- name: Keep the pinned Jellyseerr release compatible with Jellyfin authentication
+  ansible.builtin.include_tasks: jellyseerr-compat.yaml

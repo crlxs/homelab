@@ -1,0 +1,31 @@
+# pct dev[n] manages both cgroup access and in-container ownership, so we do
+# not chmod the host's NVIDIA nodes or change the host's video/render groups.
+- name: Require an available GPU device slot or the same existing device
+  ansible.builtin.assert:
+    that:
+      - >-
+        servarr_ct_config['dev' ~ gpu_index] is not defined
+        or (servarr_ct_config['dev' ~ gpu_index] | split(',') | first | regex_replace('^path=', '')) == item
+    fail_msg: An existing Jellyfin device slot belongs to a different device. Resolve the CT device configuration first.
+  loop: "{{ jellyfin_nvidia_devices }}"
+  loop_control:
+    index_var: gpu_index
+    label: "{{ item }}"
+
+- name: Build GPU arguments and detect changes independent of option order
+  ansible.builtin.set_fact:
+    servarr_ct_gpu_args: >-
+      {{ servarr_ct_gpu_args + ['--dev' ~ gpu_index,
+         item ~ ',uid=' ~ servarr_uid ~ ',gid=' ~ servarr_gid ~ ',mode=0660'] }}
+    servarr_ct_gpu_changed: >-
+      {{ servarr_ct_gpu_changed
+         or (existing_device | split(',') | first | regex_replace('^path=', '')) != item
+         or ('uid=' ~ servarr_uid) not in (existing_device | split(','))
+         or ('gid=' ~ servarr_gid) not in (existing_device | split(','))
+         or ('mode=0660' not in (existing_device | split(',')) and 'mode=660' not in (existing_device | split(','))) }}
+  vars:
+    existing_device: "{{ servarr_ct_config['dev' ~ gpu_index] | default('') }}"
+  loop: "{{ jellyfin_nvidia_devices }}"
+  loop_control:
+    index_var: gpu_index
+    label: "{{ item }}"
