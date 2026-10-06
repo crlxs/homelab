@@ -1,0 +1,25 @@
+- name: Extract SABnzbd API key from its misc section
+  ansible.builtin.set_fact:
+    sabnzbd_api_key: >-
+      {{ sabnzbd_config.content | b64decode
+         | regex_findall(sabnzbd_misc_pattern)
+         | first | default('')
+         | regex_findall(sabnzbd_key_pattern)
+         | first | default('') | trim | trim(sabnzbd_quote_chars) | trim }}
+  # YAML single-quoted strings retain regex backslashes literally. Keeping
+  # patterns out of Jinja expressions avoids Ansible/Jinja escape differences.
+  vars:
+    sabnzbd_misc_pattern: '(?ms)^[ \t]*\[misc\][ \t]*\r?\n(.*?)(?=^[ \t]*\[|\Z)'
+    sabnzbd_key_pattern: '(?m)^[ \t]*api_key[ \t]*=[ \t]*([^\r\n#;]*)'
+    sabnzbd_quote_chars: >-
+      "'
+  no_log: true
+
+- name: Require a non-empty SABnzbd API key before bootstrap
+  ansible.builtin.assert:
+    that:
+      - sabnzbd_api_key | length > 0
+    fail_msg: >-
+      No non-empty api_key was found in the [misc] section of
+      {{ sabnzbd_conf_dir }}/sabnzbd.ini. Check SABnzbd Config > General.
+    quiet: true

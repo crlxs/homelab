@@ -19,10 +19,5 @@ all:
     #       ansible_user: ansible
     #       ansible_become: true
 
-    proxmox_vms:
-      hosts:
-        servarr:
-          ansible_host: 192.168.1.200
-          ansible_become: true
-        # hermes:
-        #   ansible_host:
+    # LXC inventory is added by 01-deploy-servarr.yaml, using pct over the
+    # Proxmox host's SSH connection. No SSH daemon/key setup in guests needed.

@@ -1,268 +1,201 @@
 #!/bin/sh
 set -eu
 
-apk add --no-cache curl jq >/dev/null
+# Runs as a one-shot command in the SABnzbd LXC. Secrets arrive only on stdin.
+RADARR_URL={{ ('http://' ~ servarr_endpoints.radarr ~ ':' ~ servarr_ports.radarr) | quote }}
+SONARR_URL={{ ('http://' ~ servarr_endpoints.sonarr ~ ':' ~ servarr_ports.sonarr) | quote }}
+PROWLARR_URL={{ ('http://' ~ servarr_endpoints.prowlarr ~ ':' ~ servarr_ports.prowlarr) | quote }}
+SABNZBD_URL={{ ('http://localhost:' ~ sabnzbd_web_port) | quote }}
+SABNZBD_HOST={{ servarr_endpoints.sabnzbd | quote }}
+SABNZBD_PORT={{ sabnzbd_web_port | string | quote }}
+SERVARR_UI_USERNAME={{ servarr_ui_username | quote }}
+RADARR_ROOT_FOLDER={{ radarr_root_folder | quote }}
+SONARR_ROOT_FOLDER={{ sonarr_root_folder | quote }}
+changed=0
 bootstrap_input="$(cat)"
-password="$(printf '%s' "$bootstrap_input" | jq -er '.servarr_ui_password')"
-sabnzbd_ui_username="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_ui_username')"
-sabnzbd_ui_password="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_ui_password')"
-sabnzbd_incomplete_dir="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_incomplete_dir')"
-sabnzbd_complete_dir="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_complete_dir')"
-sabnzbd_radarr_category="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_radarr_category')"
-sabnzbd_sonarr_category="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_sonarr_category')"
-sabnzbd_prowlarr_category="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_prowlarr_category')"
-sabnzbd_provider_name="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_name')"
-sabnzbd_provider_host="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_host')"
-sabnzbd_provider_port="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_port')"
-sabnzbd_provider_username="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_username')"
-sabnzbd_provider_password="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_password')"
-sabnzbd_provider_connections="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_connections')"
-sabnzbd_provider_ssl="$(printf '%s' "$bootstrap_input" | jq -er 'if .sabnzbd_provider_ssl then 1 else 0 end')"
-sabnzbd_provider_ssl_verify="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_ssl_verify')"
-sabnzbd_provider_priority="$(printf '%s' "$bootstrap_input" | jq -er '.sabnzbd_provider_priority')"
+value() { printf '%s' "$bootstrap_input" | jq -er --arg key "$1" '.[$key]'; }
+password="$(value servarr_ui_password)"
+radarr_key="$(value radarr_api_key)"
+sonarr_key="$(value sonarr_api_key)"
+prowlarr_key="$(value prowlarr_api_key)"
+sabnzbd_key="$(value sabnzbd_api_key)"
 
-api_key() {
-  config_dir="$1"
-
-  while :; do
-    key="$(sed -n 's|.*<ApiKey>\([^<]*\)</ApiKey>.*|\1|p' "$config_dir/config.xml" 2>/dev/null || true)"
-    if [ -n "$key" ]; then
-      printf '%s' "$key"
-      return
-    fi
-
-    sleep 2
-  done
-}
+request() { curl -fsS --connect-timeout 5 --max-time 30 "$@"; }
 
 wait_for_url() {
-  url="$1"
-
-  until curl -fsS "$url" >/dev/null; do
-    sleep 2
-  done
-}
-
-wait_for_sabnzbd() {
-  until curl -fsS \
-    --connect-to localhost:8080:sabnzbd:8080 \
-    http://localhost:8080/api?mode=version >/dev/null; do
+  attempts=0
+  until curl -fsS --connect-timeout 2 --max-time 3 "$1" >/dev/null 2>&1; do
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 60 ]; then
+      printf 'Timed out waiting for %s\n' "$1" >&2
+      exit 1
+    fi
     sleep 2
   done
 }
 
 configure_auth() {
-  url="$1"
-  version="$2"
-  key="$3"
-  config="$(curl -fsS -H "X-Api-Key: $key" "$url/api/$version/config/host")"
-  username="$(printf '%s' "$config" | jq -r '.username // empty')"
-
-  if [ -n "$username" ]; then
-    return
-  fi
-
+  url="$1"; version="$2"; key="$3"
+  config="$(request -H "X-Api-Key: $key" "$url/api/$version/config/host")"
+  # Preserve existing accounts instead of resetting their password on reruns.
+  if [ -n "$(printf '%s' "$config" | jq -r '.username // empty')" ]; then return; fi
   updated="$(printf '%s' "$config" | jq \
-    --arg username "$SERVARR_UI_USERNAME" \
-    --arg password "$password" \
+    --arg username "$SERVARR_UI_USERNAME" --arg password "$password" \
     '.authenticationMethod = "forms" | .authenticationRequired = "enabled" |
      .username = $username | .password = $password | .passwordConfirmation = $password')"
   id="$(printf '%s' "$config" | jq -r '.id')"
+  printf '%s' "$updated" | request -X PUT -H 'Content-Type: application/json' \
+    -H "X-Api-Key: $key" --data-binary @- "$url/api/$version/config/host/$id" >/dev/null
+  changed=1
+}
 
-  curl -fsS -X PUT \
-    -H "Content-Type: application/json" \
-    -H "X-Api-Key: $key" \
-    --data "$updated" \
-    "$url/api/$version/config/host/$id" >/dev/null
+# Update only fields owned by this bootstrap, preserving other provider fields.
+merge_fields() {
+  jq --argjson fields "$1" '
+    .fields = ((.fields // []) as $old |
+      [$old[] | select(.name as $n | $fields | all(.name != $n))] + $fields)'
 }
 
 register_application() {
-  name="$1"
-  implementation="$2"
-  contract="$3"
-  base_url="$4"
-  app_key="$5"
-  categories="$6"
-  existing="$(curl -fsS -H "X-Api-Key: $prowlarr_key" http://prowlarr:9696/api/v1/applications)"
-
-  if printf '%s' "$existing" | jq -e \
-    --arg implementation "$implementation" \
-    --arg base_url "$base_url" \
-    'any(.[]; .implementation == $implementation and any(.fields[]?; .name == "baseUrl" and .value == $base_url))' >/dev/null; then
-    return
+  name="$1"; implementation="$2"; contract="$3"; base_url="$4"; app_key="$5"; categories="$6"
+  existing="$(request -H "X-Api-Key: $prowlarr_key" "$PROWLARR_URL/api/v1/applications")"
+  current="$(printf '%s' "$existing" | jq -c --arg name "$name" --arg impl "$implementation" \
+    '[.[] | select(.name == $name and .implementation == $impl)][0] // empty')"
+  fields="$(jq -n --arg prowlarr "$PROWLARR_URL" --arg base_url "$base_url" \
+    --arg api_key "$app_key" --argjson categories "$categories" '[
+      {name: "prowlarrUrl", value: $prowlarr}, {name: "baseUrl", value: $base_url},
+      {name: "apiKey", value: $api_key}, {name: "syncCategories", value: $categories}]')"
+  if [ -n "$current" ]; then
+    updated="$(printf '%s' "$current" | merge_fields "$fields")"
+    if [ "$(printf '%s' "$current" | jq -cS '.fields | sort_by(.name)')" = \
+         "$(printf '%s' "$updated" | jq -cS '.fields | sort_by(.name)')" ]; then return; fi
+    id="$(printf '%s' "$current" | jq -r '.id')"
+    method=PUT; endpoint="$PROWLARR_URL/api/v1/applications/$id"
+  else
+    updated="$(jq -n --arg name "$name" --arg impl "$implementation" --arg contract "$contract" \
+      --argjson fields "$fields" '{name: $name, implementation: $impl, configContract: $contract,
+        syncLevel: "fullSync", fields: $fields}')"
+    method=POST; endpoint="$PROWLARR_URL/api/v1/applications"
   fi
-
-  payload="$(jq -n \
-    --arg name "$name" \
-    --arg implementation "$implementation" \
-    --arg contract "$contract" \
-    --arg base_url "$base_url" \
-    --arg api_key "$app_key" \
-    --argjson categories "$categories" \
-    '{name: $name, implementation: $implementation, configContract: $contract, syncLevel: "fullSync", fields: [
-      {name: "prowlarrUrl", value: "http://prowlarr:9696"},
-      {name: "baseUrl", value: $base_url},
-      {name: "apiKey", value: $api_key},
-      {name: "syncCategories", value: $categories}
-    ]}')"
-
-  curl -fsS -X POST \
-    -H "Content-Type: application/json" \
-    -H "X-Api-Key: $prowlarr_key" \
-    --data "$payload" \
-    http://prowlarr:9696/api/v1/applications >/dev/null
+  printf '%s' "$updated" | request -X "$method" -H 'Content-Type: application/json' \
+    -H "X-Api-Key: $prowlarr_key" --data-binary @- "$endpoint" >/dev/null
+  changed=1
 }
 
 register_download_client() {
-  url="$1"
-  version="$2"
-  key="$3"
-  category_field="$4"
-  category="$5"
-  remove_completed_downloads="$6"
-
-  existing="$(curl -fsS -H "X-Api-Key: $key" "$url/api/$version/downloadclient")"
-  if printf '%s' "$existing" | jq -e \
-    'any(.[]; .implementation == "Sabnzbd")' >/dev/null; then
-    return
+  url="$1"; version="$2"; key="$3"; category_field="$4"; category="$5"; remove_completed="$6"
+  existing="$(request -H "X-Api-Key: $key" "$url/api/$version/downloadclient")"
+  current="$(printf '%s' "$existing" | jq -c \
+    '[.[] | select(.implementation == "Sabnzbd" and .name == "SABnzbd")][0] // empty')"
+  # A differently named SAB client is user-managed; do not create a duplicate.
+  if [ -z "$current" ] && printf '%s' "$existing" | jq -e 'any(.[]; .implementation == "Sabnzbd")' >/dev/null; then return; fi
+  fields="$(jq -n --arg host "$SABNZBD_HOST" --argjson port "$SABNZBD_PORT" \
+    --arg api_key "$sabnzbd_key" --arg category_field "$category_field" --arg category "$category" '[
+      {name: "host", value: $host}, {name: "port", value: $port}, {name: "useSsl", value: false},
+      {name: "urlBase", value: ""}, {name: "apiKey", value: $api_key}, {name: $category_field, value: $category}]')"
+  if [ -n "$current" ]; then
+    updated="$(printf '%s' "$current" | merge_fields "$fields")"
+    if [ "$(printf '%s' "$current" | jq -cS '.fields | sort_by(.name)')" = \
+         "$(printf '%s' "$updated" | jq -cS '.fields | sort_by(.name)')" ]; then return; fi
+    id="$(printf '%s' "$current" | jq -r '.id')"
+    method=PUT; endpoint="$url/api/$version/downloadclient/$id"
+  else
+    updated="$(jq -n --argjson fields "$fields" --argjson remove_completed "$remove_completed" '{
+      name: "SABnzbd", enable: true, protocol: "usenet", priority: 1,
+      removeCompletedDownloads: $remove_completed, removeFailedDownloads: true,
+      implementation: "Sabnzbd", configContract: "SabnzbdSettings", fields: $fields}')"
+    method=POST; endpoint="$url/api/$version/downloadclient"
   fi
-
-  payload="$(jq -n \
-    --arg category_field "$category_field" \
-    --arg category "$category" \
-    --arg api_key "$sabnzbd_key" \
-    --argjson remove_completed_downloads "$remove_completed_downloads" \
-    '{
-      name: "SABnzbd",
-      enable: true,
-      protocol: "usenet",
-      priority: 1,
-      removeCompletedDownloads: $remove_completed_downloads,
-      removeFailedDownloads: true,
-      implementation: "Sabnzbd",
-      configContract: "SabnzbdSettings",
-      fields: [
-        {name: "host", value: "sabnzbd"},
-        {name: "port", value: 8080},
-        {name: "useSsl", value: false},
-        {name: "urlBase", value: ""},
-        {name: "apiKey", value: $api_key},
-        {name: $category_field, value: $category}
-      ]
-    }')"
-
-  curl -fsS -X POST \
-    -H "Content-Type: application/json" \
-    -H "X-Api-Key: $key" \
-    --data "$payload" \
-    "$url/api/$version/downloadclient" >/dev/null
+  printf '%s' "$updated" | request -X "$method" -H 'Content-Type: application/json' \
+    -H "X-Api-Key: $key" --data-binary @- "$endpoint" >/dev/null
+  changed=1
 }
 
 ensure_root_folder() {
-  url="$1"
-  key="$2"
-  path="$3"
-  existing="$(curl -fsS -H "X-Api-Key: $key" "$url/api/v3/rootfolder")"
-
-  if printf '%s' "$existing" | jq -e --arg path "$path" \
-    'any(.[]; .path == $path)' >/dev/null; then
-    return
-  fi
-
-  payload="$(jq -n --arg path "$path" '{path: $path}')"
-  curl -fsS -X POST \
-    -H "Content-Type: application/json" \
-    -H "X-Api-Key: $key" \
-    --data "$payload" \
-    "$url/api/v3/rootfolder" >/dev/null
+  url="$1"; key="$2"; path="$3"
+  existing="$(request -H "X-Api-Key: $key" "$url/api/v3/rootfolder")"
+  if printf '%s' "$existing" | jq -e --arg path "$path" 'any(.[]; .path == $path)' >/dev/null; then return; fi
+  jq -n --arg path "$path" '{path: $path}' | request -X POST -H 'Content-Type: application/json' \
+    -H "X-Api-Key: $key" --data-binary @- "$url/api/v3/rootfolder" >/dev/null
+  changed=1
 }
 
-sabnzbd_api_key() {
-  while :; do
-    key="$(sed -n 's/^api_key = //p' /config/sabnzbd/sabnzbd.ini 2>/dev/null || true)"
-    if [ -n "$key" ]; then
-      printf '%s' "$key"
-      return
-    fi
-
-    sleep 2
-  done
+# Form data (including passwords) is passed through stdin, not curl arguments.
+sabnzbd_request() {
+  printf '%s' "$1" | jq -r --arg apikey "$sabnzbd_key" \
+    '. + {apikey: $apikey, output: "json"} | to_entries |
+      map((.key | @uri) + "=" + (.value | tostring | @uri)) | join("&")' |
+    request --data-binary @- "$SABNZBD_URL/api"
 }
 
-sabnzbd_set_config() {
-  response="$(curl -fsS --get \
-    --connect-to localhost:8080:sabnzbd:8080 \
-    http://localhost:8080/api \
-    --data-urlencode "apikey=$sabnzbd_key" \
-    --data-urlencode "mode=set_config" \
-    "$@")"
-  printf '%s' "$response" | jq -e '.status != false' >/dev/null
+sabnzbd_set_misc() {
+  keyword="$1"; desired="$2"
+  query="$(jq -n --arg keyword "$keyword" '{mode: "get_config", section: "misc", keyword: $keyword}')"
+  current="$(sabnzbd_request "$query")"
+  if [ "$(printf '%s' "$current" | jq -r --arg key "$keyword" '.config.misc[$key] | tostring')" = "$desired" ]; then return; fi
+  query="$(jq -n --arg keyword "$keyword" --arg value "$desired" \
+    '{mode: "set_config", section: "misc", keyword: $keyword, value: $value}')"
+  response="$(sabnzbd_request "$query")"
+  printf '%s' "$response" | jq -e '.status != false and .config != null' >/dev/null
+  changed=1
 }
 
-wait_for_url http://prowlarr:9696/ping
-wait_for_url http://radarr:7878/ping
-wait_for_url http://sonarr:8989/ping
-wait_for_sabnzbd
+sabnzbd_set_entry() {
+  section="$1"; desired="$2"
+  name="$(printf '%s' "$desired" | jq -r '.name')"
+  query="$(jq -n --arg section "$section" --arg keyword "$name" \
+    '{mode: "get_config", section: $section, keyword: $keyword}')"
+  current="$(sabnzbd_request "$query")"
+  # SAB masks passwords: preserve established provider credentials on reruns.
+  if printf '%s' "$current" | jq -e --arg section "$section" --argjson desired "$desired" '
+    .config[$section][0] as $current | $current != null and
+      ($desired | to_entries | all(.key == "password" or
+        (($current[.key] | tostring) == (.value | tostring))))' >/dev/null; then return; fi
+  query="$(printf '%s' "$desired" | jq --arg section "$section" --argjson current "$current" '
+    (if $current.config[$section][0] != null then del(.password) else . end) +
+    {mode: "set_config", section: $section}')"
+  response="$(sabnzbd_request "$query")"
+  printf '%s' "$response" | jq -e '.status != false and .config != null' >/dev/null
+  changed=1
+}
 
-prowlarr_key="$(api_key /config/prowlarr)"
-radarr_key="$(api_key /config/radarr)"
-sonarr_key="$(api_key /config/sonarr)"
-sabnzbd_key="$(sabnzbd_api_key)"
+wait_for_url "$RADARR_URL/ping"
+wait_for_url "$SONARR_URL/ping"
+wait_for_url "$PROWLARR_URL/ping"
+# Loopback access keeps SAB's hostname protection enabled.
+wait_for_url "$SABNZBD_URL/api?mode=version"
 
-configure_auth http://prowlarr:9696 v1 "$prowlarr_key"
-configure_auth http://radarr:7878 v3 "$radarr_key"
-configure_auth http://sonarr:8989 v3 "$sonarr_key"
+configure_auth "$RADARR_URL" v3 "$radarr_key"
+configure_auth "$SONARR_URL" v3 "$sonarr_key"
+configure_auth "$PROWLARR_URL" v1 "$prowlarr_key"
+ensure_root_folder "$RADARR_URL" "$radarr_key" "$RADARR_ROOT_FOLDER"
+ensure_root_folder "$SONARR_URL" "$sonarr_key" "$SONARR_ROOT_FOLDER"
 
-ensure_root_folder http://radarr:7878 "$radarr_key" "$RADARR_ROOT_FOLDER"
-ensure_root_folder http://sonarr:8989 "$sonarr_key" "$SONARR_ROOT_FOLDER"
+sabnzbd_set_misc download_dir "$(value sabnzbd_incomplete_dir)"
+sabnzbd_set_misc complete_dir "$(value sabnzbd_complete_dir)"
+sabnzbd_set_misc permissions 775
+for category_key in sabnzbd_radarr_category sabnzbd_sonarr_category sabnzbd_prowlarr_category; do
+  category="$(value "$category_key")"
+  desired="$(jq -n --arg category "$category" '{name: $category, dir: $category, pp: 3}')"
+  sabnzbd_set_entry categories "$desired"
+done
+provider="$(printf '%s' "$bootstrap_input" | jq '{
+  name: .sabnzbd_provider_name, host: .sabnzbd_provider_host,
+  port: (.sabnzbd_provider_port | tonumber), username: .sabnzbd_provider_username,
+  password: .sabnzbd_provider_password, connections: (.sabnzbd_provider_connections | tonumber),
+  ssl: (if .sabnzbd_provider_ssl then 1 else 0 end), ssl_verify: .sabnzbd_provider_ssl_verify,
+  priority: .sabnzbd_provider_priority, enable: 1}')"
+sabnzbd_set_entry servers "$provider"
+current="$(sabnzbd_request '{"mode":"get_config","section":"misc","keyword":"username"}')"
+if [ -z "$(printf '%s' "$current" | jq -r '.config.misc.username // empty')" ]; then
+  # Set password first, so a partial failure does not leave a username-only account.
+  sabnzbd_set_misc password "$(value sabnzbd_ui_password)"
+  sabnzbd_set_misc username "$(value sabnzbd_ui_username)"
+fi
 
-sabnzbd_set_config \
-  --data-urlencode "section=misc" \
-  --data-urlencode "keyword=download_dir" \
-  --data-urlencode "value=$sabnzbd_incomplete_dir"
-sabnzbd_set_config \
-  --data-urlencode "section=misc" \
-  --data-urlencode "keyword=complete_dir" \
-  --data-urlencode "value=$sabnzbd_complete_dir"
-sabnzbd_set_config \
-  --data-urlencode "section=categories" \
-  --data-urlencode "name=$sabnzbd_radarr_category" \
-  --data-urlencode "dir=$sabnzbd_radarr_category" \
-  --data-urlencode "pp=3"
-sabnzbd_set_config \
-  --data-urlencode "section=categories" \
-  --data-urlencode "name=$sabnzbd_sonarr_category" \
-  --data-urlencode "dir=$sabnzbd_sonarr_category" \
-  --data-urlencode "pp=3"
-sabnzbd_set_config \
-  --data-urlencode "section=categories" \
-  --data-urlencode "name=$sabnzbd_prowlarr_category" \
-  --data-urlencode "dir=$sabnzbd_prowlarr_category" \
-  --data-urlencode "pp=3"
-sabnzbd_set_config \
-  --data-urlencode "section=servers" \
-  --data-urlencode "name=$sabnzbd_provider_name" \
-  --data-urlencode "host=$sabnzbd_provider_host" \
-  --data-urlencode "port=$sabnzbd_provider_port" \
-  --data-urlencode "username=$sabnzbd_provider_username" \
-  --data-urlencode "password=$sabnzbd_provider_password" \
-  --data-urlencode "connections=$sabnzbd_provider_connections" \
-  --data-urlencode "ssl=$sabnzbd_provider_ssl" \
-  --data-urlencode "ssl_verify=$sabnzbd_provider_ssl_verify" \
-  --data-urlencode "priority=$sabnzbd_provider_priority" \
-  --data-urlencode "enable=1"
-sabnzbd_set_config \
-  --data-urlencode "section=misc" \
-  --data-urlencode "keyword=username" \
-  --data-urlencode "value=$sabnzbd_ui_username"
-sabnzbd_set_config \
-  --data-urlencode "section=misc" \
-  --data-urlencode "keyword=password" \
-  --data-urlencode "value=$sabnzbd_ui_password"
-
-register_download_client http://radarr:7878 v3 "$radarr_key" movieCategory "$sabnzbd_radarr_category" true
-register_download_client http://sonarr:8989 v3 "$sonarr_key" tvCategory "$sabnzbd_sonarr_category" true
-register_download_client http://prowlarr:9696 v1 "$prowlarr_key" category "$sabnzbd_prowlarr_category" false
-
-register_application Radarr Radarr RadarrSettings http://radarr:7878 "$radarr_key" '[2000,2010,2020,2030,2040,2045,2050,2060]'
-register_application Sonarr Sonarr SonarrSettings http://sonarr:8989 "$sonarr_key" '[5000,5010,5020,5030,5040,5045,5050,5060]'
+register_download_client "$RADARR_URL" v3 "$radarr_key" movieCategory "$(value sabnzbd_radarr_category)" true
+register_download_client "$SONARR_URL" v3 "$sonarr_key" tvCategory "$(value sabnzbd_sonarr_category)" true
+register_download_client "$PROWLARR_URL" v1 "$prowlarr_key" category "$(value sabnzbd_prowlarr_category)" false
+register_application Radarr Radarr RadarrSettings "$RADARR_URL" "$radarr_key" '[2000,2010,2020,2030,2040,2045,2050,2060]'
+register_application Sonarr Sonarr SonarrSettings "$SONARR_URL" "$sonarr_key" '[5000,5010,5020,5030,5040,5045,5050,5060]'
+if [ "$changed" -eq 1 ]; then printf 'CHANGED\n'; else printf 'OK\n'; fi

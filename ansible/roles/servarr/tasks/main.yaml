@@ -1,204 +1,124 @@
-- name: Pause and wait for manual disk configuration verification
-  ansible.builtin.pause:
-    prompt: |
-      ---------------------------------------------------------
-      Please verify that the media disk is fully configured
-      and mounted on the VM.
+- name: Require a supported native Debian LXC
+  ansible.builtin.assert:
+    that:
+      - ansible_distribution == 'Debian'
+      - ansible_distribution_major_version == '13'
+      - ansible_architecture == 'x86_64'
+      - servarr_ct.name in ['radarr', 'sonarr', 'prowlarr', 'sabnzbd', 'jellyseerr']
 
-      Press [Enter] to continue, or Ctrl+C then 'c' to cancel.
-      ---------------------------------------------------------
-
-- name: Ensure media group exists
-  ansible.builtin.group:
-    name: "{{ servarr_group }}"
+- name: Install common runtime and monitoring packages
+  ansible.builtin.apt:
+    name: [ca-certificates, curl, jq, tzdata, prometheus-node-exporter]
     state: present
-    system: true
+    update_cache: true
+    cache_valid_time: 3600
 
-- name: Ensure media user exists
-  ansible.builtin.user:
-    name: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    state: present
-    system: true
-    create_home: false
-    shell: /usr/sbin/nologin
-
-- name: Gather media account entries
+- name: Read existing guest media accounts
   ansible.builtin.getent:
     database: "{{ item.database }}"
     key: "{{ item.key }}"
+    fail_key: false
   loop:
     - database: passwd
       key: "{{ servarr_user }}"
     - database: group
       key: "{{ servarr_group }}"
 
-- name: Record media account IDs for containers
-  ansible.builtin.set_fact:
-    servarr_puid: "{{ getent_passwd[servarr_user][2] }}"
-    servarr_pgid: "{{ getent_group[servarr_group][2] }}"
-
-- name: Ensure media disk is indeed present in the VM
-  ansible.builtin.wait_for:
-    path: "{{ media_disk }}"
-    timeout: 30
-
-- name: Format filesystem on the media disk
-  ansible.builtin.filesystem:
-    fstype: ext4
-    dev: "{{ media_disk }}"
-    force: false
-
-- name: Create media directory
-  ansible.builtin.file:
-    path: "{{ media_dir }}"
-    state: directory
-    owner: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    mode: "0755"
-
-- name: Mount media directory and make permanent through /etc/fstab
-  ansible.builtin.mount:
-    path: "{{ media_dir }}"
-    src: "{{ media_disk }}"
-    fstype: ext4
-    opts: defaults
-    state: mounted
-
-- name: Set ownership on media contents
-  ansible.builtin.file:
-    path: "{{ media_dir }}"
-    state: directory
-    owner: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    recurse: true
-
-- name: Set group inheritance on mounted media directory
-  ansible.builtin.file:
-    path: "{{ media_dir }}"
-    state: directory
-    owner: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    mode: "2775"
-
-- name: Create media library root folders
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    mode: "2775"
-  loop:
-    - "{{ radarr_root_folder }}"
-    - "{{ sonarr_root_folder }}"
-    - "{{ sabnzbd_incomplete_dir }}"
-    - "{{ sabnzbd_complete_dir }}"
-
-- name: Ensure config directory exists
-  ansible.builtin.file:
-    path: "{{ servarr_conf_dir }}"
-    state: directory
-    owner: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    mode: "0755"
-
-- name: Ensure SABnzbd config directory exists
-  ansible.builtin.file:
-    path: "{{ sabnzbd_conf_dir }}"
-    state: directory
-    owner: "{{ servarr_user }}"
-    group: "{{ servarr_group }}"
-    mode: "0755"
-
-- name: Require Servarr and SABnzbd bootstrap values
+- name: Refuse to renumber guest media accounts
   ansible.builtin.assert:
     that:
-      - servarr_ui_password | length > 0
-      - sabnzbd_ui_username | length > 0
-      - sabnzbd_provider_name | length > 0
-      - sabnzbd_provider_host | length > 0
-      - sabnzbd_provider_username | length > 0
-      - sabnzbd_provider_password | length > 0
-      - sabnzbd_provider_port | int > 0
-      - sabnzbd_provider_connections | int > 0
-      - sabnzbd_provider_port | int != 563 or sabnzbd_provider_ssl | bool
-    fail_msg: Define all required Servarr and SABnzbd bootstrap values.
-  no_log: true
+      - getent_passwd[servarr_user] == none or getent_passwd[servarr_user][1] | int == servarr_uid | int
+      - getent_group[servarr_group] == none or getent_group[servarr_group][1] | int == servarr_gid | int
 
-- name: Remove obsolete on-host Servarr UI password file
+- name: Create the shared guest media group
+  ansible.builtin.group:
+    name: "{{ servarr_group }}"
+    gid: "{{ servarr_gid }}"
+
+- name: Create the shared guest media user
+  ansible.builtin.user:
+    name: "{{ servarr_user }}"
+    uid: "{{ servarr_uid }}"
+    group: "{{ servarr_group }}"
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Create application data directory
   ansible.builtin.file:
-    path: "{{ servarr_conf_dir }}/secrets/ui_password"
-    state: absent
-  no_log: true
-
-- name: Install Servarr bootstrap script
-  ansible.builtin.template:
-    src: bootstrap-servarr.sh.j2
-    dest: "{{ servarr_conf_dir }}/bootstrap-servarr.sh"
-    owner: root
-    group: root
-    mode: "0755"
-
-- name: Install Servarr Docker Compose definition
-  ansible.builtin.template:
-    src: docker-compose.yaml.j2
-    dest: "{{ servarr_conf_dir }}/docker-compose.yaml"
+    path: "{{ servarr_conf_dir }}/{{ servarr_ct.name }}"
+    state: directory
     owner: "{{ servarr_user }}"
     group: "{{ servarr_group }}"
-    mode: "0644"
+    mode: '0750'
 
-- name: Start Servarr Docker Compose project
-  community.docker.docker_compose_v2:
-    project_src: "{{ servarr_conf_dir }}"
-    files:
-      - docker-compose.yaml
-    state: present
-
-- name: Remove legacy Servarr bootstrap container
+- name: Check shared media permissions as the service account
   ansible.builtin.command:
-    argv:
-      - docker
-      - container
-      - rm
-      - --force
-      - servarr-bootstrap
-  register: servarr_legacy_bootstrap_container
-  changed_when: servarr_legacy_bootstrap_container.rc == 0
-  failed_when: servarr_legacy_bootstrap_container.rc not in [0, 1]
-
-- name: Bootstrap Servarr and SABnzbd configuration
-  ansible.builtin.command:
-    argv:
-      - docker
-      - compose
-      - --file
-      - docker-compose.yaml
-      - run
-      - --rm
-      - --no-deps
-      - -T
-      - servarr-bootstrap
-    chdir: "{{ servarr_conf_dir }}"
-    stdin: >-
-      {{ {
-        "servarr_ui_password": servarr_ui_password,
-        "sabnzbd_ui_username": sabnzbd_ui_username,
-        "sabnzbd_ui_password": servarr_ui_password,
-        "sabnzbd_incomplete_dir": sabnzbd_incomplete_dir,
-        "sabnzbd_complete_dir": sabnzbd_complete_dir,
-        "sabnzbd_radarr_category": sabnzbd_radarr_category,
-        "sabnzbd_sonarr_category": sabnzbd_sonarr_category,
-        "sabnzbd_prowlarr_category": sabnzbd_prowlarr_category,
-        "sabnzbd_provider_name": sabnzbd_provider_name,
-        "sabnzbd_provider_host": sabnzbd_provider_host,
-        "sabnzbd_provider_port": sabnzbd_provider_port,
-        "sabnzbd_provider_username": sabnzbd_provider_username,
-        "sabnzbd_provider_password": sabnzbd_provider_password,
-        "sabnzbd_provider_connections": sabnzbd_provider_connections,
-        "sabnzbd_provider_ssl": sabnzbd_provider_ssl,
-        "sabnzbd_provider_ssl_verify": sabnzbd_provider_ssl_verify,
-        "sabnzbd_provider_priority": sabnzbd_provider_priority
-      } | to_json }}
-    stdin_add_newline: true
+    argv: [runuser, -u, "{{ servarr_user }}", --, test, -w, "{{ item }}"]
+  loop: ["{{ radarr_root_folder }}", "{{ sonarr_root_folder }}", "{{ sabnzbd_incomplete_dir }}", "{{ sabnzbd_complete_dir }}"]
+  when: servarr_ct.media
   changed_when: false
+
+- name: Install native Servarr binaries
+  ansible.builtin.include_tasks: arr.yaml
+  when: servarr_ct.name in ['radarr', 'sonarr', 'prowlarr']
+
+- name: Install SABnzbd from Debian backports
+  ansible.builtin.include_tasks: sabnzbd.yaml
+  when: servarr_ct.name == 'sabnzbd'
+
+- name: Install Jellyseerr from its pinned source release
+  ansible.builtin.include_tasks: jellyseerr.yaml
+  when: servarr_ct.name == 'jellyseerr'
+
+- name: Install application service unit
+  ansible.builtin.template:
+    src: servarr.service.j2
+    dest: "/etc/systemd/system/{{ servarr_ct.name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart native Servarr application
+
+- name: Apply pending service changes before readiness checks
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the native application
+  ansible.builtin.systemd_service:
+    name: "{{ servarr_ct.name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Enable and start guest metrics exporter
+  ansible.builtin.systemd_service:
+    name: prometheus-node-exporter
+    enabled: true
+    state: started
+
+- name: Wait for application HTTP readiness
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ servarr_ports[servarr_ct.name] }}{{ '/ping' if servarr_ct.name in ['radarr', 'sonarr', 'prowlarr'] else '/' }}"
+    status_code: [200, 302, 401]
+  register: servarr_readiness
+  until: servarr_readiness is succeeded
+  retries: 60
+  delay: 2
+
+- name: Wait for generated Servarr configuration
+  ansible.builtin.wait_for:
+    path: "{{ servarr_conf_dir }}/{{ servarr_ct.name }}/config.xml"
+    timeout: 120
+  when: servarr_ct.name in ['radarr', 'sonarr', 'prowlarr']
+
+- name: Read generated Servarr API key in memory
+  ansible.builtin.slurp:
+    src: "{{ servarr_conf_dir }}/{{ servarr_ct.name }}/config.xml"
+  register: servarr_arr_config
+  when: servarr_ct.name in ['radarr', 'sonarr', 'prowlarr']
+  no_log: true
+
+- name: Record Servarr API key for bootstrap
+  ansible.builtin.set_fact:
+    servarr_api_key: "{{ servarr_arr_config.content | b64decode | regex_findall('<ApiKey>([^<]+)</ApiKey>') | first }}"
+  when: servarr_ct.name in ['radarr', 'sonarr', 'prowlarr']
   no_log: true

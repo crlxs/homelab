@@ -13,7 +13,7 @@ proxmox_validate_certs: false
 # See roles/proxmox_vm/defaults/main.yaml for the supported keys and defaults.
 # 
 # Dont forget to add the VMs to hosts.yaml, its not the best approach but works.
-proxmox_vms:
+proxmox_vms: []
   # - name: shiet
   #   vmid: 111
   #   ip: 192.168.1.170/24
@@ -23,11 +23,55 @@ proxmox_vms:
   #   #root_disk_size: 32G
   #   onboot: true
   #
-  - name: servarr
-    vmid: 120
-    ip: 192.168.1.200/24
-    gateway: 192.168.1.1
+# Native Servarr LXCs. Confirm IDs, IPs and storage names before deployment.
+# No reuse of VM 120 or its IP; the VM is left available during migration.
+servarr_lxc_template_storage: local
+servarr_lxc_storage: local-lvm
+servarr_lxc_bridge: vmbr0
+servarr_lxc_gateway: 192.168.1.1
+servarr_lxc_nameserver: 8.8.8.8
+# Optional: mount an EXISTING filesystem on PVE and persist it in fstab.
+# Set this only after detaching the media disk/filesystem from the old VM.
+# Empty means the filesystem must already be mounted at servarr_host_media_dir.
+servarr_host_media_dir: /media-pool # Directory on the proxmox hosts to be mounted by the LXCs were the media files will be stored
+servarr_media_uuid: ""
+servarr_media_fstype: ext4
+# Select a Debian 13 standard template from `pveam available`. An empty value
+# discovers and downloads the current Debian 13 amd64 template automatically.
+servarr_lxc_template: ""
+servarr_lxcs:
+  - name: radarr
+    vmid: 121
+    ip: 192.168.1.201/24
+    cores: 2
+    memory: 1024
+    disk: 8
+    media: true
+  - name: sonarr
+    vmid: 122
+    ip: 192.168.1.202/24
+    cores: 2
+    memory: 1024
+    disk: 8
+    media: true
+  - name: prowlarr
+    vmid: 123
+    ip: 192.168.1.203/24
+    cores: 1
+    memory: 512
+    disk: 8
+    media: false
+  - name: sabnzbd
+    vmid: 124
+    ip: 192.168.1.204/24
     cores: 4
-    memory: 8192
-    #root_disk_size: 32G
-    onboot: true
+    memory: 2048
+    disk: 8
+    media: true
+  - name: jellyseerr
+    vmid: 125
+    ip: 192.168.1.205/24
+    cores: 2
+    memory: 4096 # Next.js source build needs more RAM than normal operation.
+    disk: 16
+    media: false

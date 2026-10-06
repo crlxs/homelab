@@ -1,0 +1,121 @@
+- name: Validate native templates with Ansible without contacting Proxmox
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    ansible_remote_tmp: /tmp/ansible-lxc-test-tmp
+    servarr_endpoints:
+      radarr: 192.0.2.1
+      sonarr: 192.0.2.2
+      prowlarr: 192.0.2.3
+      sabnzbd: 192.0.2.4
+    servarr_proxmox_host: fixture-pve
+    sabnzbd_config:
+      content: "{{ '[misc]\n    api_key = \"fixture-sab-key\"\n' | b64encode }}"
+  tasks:
+    - name: Load role defaults
+      ansible.builtin.include_vars: ../roles/servarr/defaults/main.yaml
+
+    - name: Create fixture hosts containing only dummy API keys
+      ansible.builtin.add_host:
+        name: "{{ item }}"
+        servarr_api_key: "fixture-{{ item }}-key"
+      loop: [radarr, sonarr, prowlarr]
+      changed_when: false
+
+    - name: Create the fixture credential source
+      ansible.builtin.add_host:
+        name: fixture-pve
+        servarr_bootstrap_values:
+          servarr_ui_password: fixture-password
+          sabnzbd_ui_username: admin
+          sabnzbd_ui_password: fixture-password
+          sabnzbd_provider_name: primary
+          sabnzbd_provider_host: news.example.test
+          sabnzbd_provider_port: '563'
+          sabnzbd_provider_username: fixture-user
+          sabnzbd_provider_password: fixture-provider-password
+          sabnzbd_provider_connections: '10'
+      changed_when: false
+
+    - name: Verify a missing key produces the intended validation error
+      block:
+        - name: Parse a dummy config with no misc API key
+          ansible.builtin.include_role:
+            name: servarr
+            tasks_from: sabnzbd-api-key.yaml
+          vars:
+            sabnzbd_config:
+              content: "{{ '[misc]\nhost = localhost\n[other]\napi_key = wrong-key\n' | b64encode }}"
+
+        - name: Reject an unexpectedly accepted missing-key fixture
+          ansible.builtin.fail:
+            msg: The missing-key fixture was incorrectly accepted.
+      rescue:
+        - name: Check that validation failed clearly rather than during templating
+          ansible.builtin.assert:
+            that:
+              - "'No non-empty api_key' in ansible_failed_result.msg"
+
+    - name: Extract the dummy API key through the actual role tasks
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: sabnzbd-api-key.yaml
+
+    - name: Verify the dummy API key was parsed correctly
+      ansible.builtin.assert:
+        that:
+          - sabnzbd_api_key == 'fixture-sab-key'
+
+    - name: Read the actual bootstrap task definition
+      ansible.builtin.set_fact:
+        fixture_bootstrap_tasks: "{{ lookup('ansible.builtin.template', '../roles/servarr/tasks/bootstrap.yaml') | from_yaml }}"
+
+    - name: Verify the actual bootstrap stdin expression can be evaluated
+      ansible.builtin.assert:
+        that:
+          - (fixture_bootstrap_tasks[-1]['ansible.builtin.command'].stdin | from_json).sabnzbd_api_key == 'fixture-sab-key'
+          - (fixture_bootstrap_tasks[-1]['ansible.builtin.command'].stdin | from_json).sabnzbd_ui_password == 'fixture-password'
+
+    - name: Allocate a temporary template validation directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: ansible-lxc-render-
+      register: fixture_directory
+
+    - name: Render native service templates and check shell syntax
+      block:
+        - name: Render every application service unit
+          ansible.builtin.template:
+            src: ../roles/servarr/templates/servarr.service.j2
+            dest: "{{ fixture_directory.path }}/{{ item }}.service"
+            mode: '0600'
+          vars:
+            servarr_ct:
+              name: "{{ item }}"
+              media: "{{ item in ['radarr', 'sonarr', 'sabnzbd'] }}"
+          loop: [radarr, sonarr, prowlarr, sabnzbd, jellyseerr]
+
+        - name: Render SABnzbd first-run configuration
+          ansible.builtin.template:
+            src: ../roles/servarr/templates/sabnzbd.ini.j2
+            dest: "{{ fixture_directory.path }}/sabnzbd.ini"
+            mode: '0600'
+          no_log: true
+
+        - name: Render the native bootstrap script
+          ansible.builtin.template:
+            src: ../roles/servarr/templates/bootstrap-servarr.sh.j2
+            dest: "{{ fixture_directory.path }}/bootstrap-servarr.sh"
+            mode: '0600'
+
+        - name: Verify the rendered bootstrap shell syntax
+          ansible.builtin.command:
+            argv: [sh, -n, "{{ fixture_directory.path }}/bootstrap-servarr.sh"]
+          changed_when: false
+      always:
+        - name: Remove temporary fixture templates
+          ansible.builtin.file:
+            path: "{{ fixture_directory.path }}"
+            state: absent

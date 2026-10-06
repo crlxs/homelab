@@ -1,0 +1,32 @@
+[Unit]
+Description={{ servarr_ct.name | capitalize }} native Servarr service
+Wants=network-online.target
+After=network-online.target
+{% if servarr_ct.media %}
+RequiresMountsFor={{ media_dir }}
+{% endif %}
+
+[Service]
+Type=simple
+User={{ servarr_user }}
+Group={{ servarr_group }}
+UMask=0002
+Environment=TZ={{ timezone }}
+{% if servarr_ct.name in ['radarr', 'sonarr', 'prowlarr'] %}
+ExecStart=/opt/{{ servarr_ct.name | capitalize }}/{{ servarr_ct.name | capitalize }} -nobrowser -data={{ servarr_conf_dir }}/{{ servarr_ct.name }}
+{% elif servarr_ct.name == 'sabnzbd' %}
+ExecStart=/usr/bin/sabnzbdplus --config-file {{ sabnzbd_conf_dir }}/sabnzbd.ini --server 0.0.0.0:{{ sabnzbd_web_port }} --browser 0
+{% elif servarr_ct.name == 'jellyseerr' %}
+WorkingDirectory=/opt/jellyseerr
+Environment=NODE_ENV=production
+Environment=PORT=5055
+Environment=CONFIG_DIRECTORY={{ servarr_conf_dir }}/jellyseerr
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/bin/node dist/index.js
+{% endif %}
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

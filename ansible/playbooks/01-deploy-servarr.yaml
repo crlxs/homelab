@@ -1,12 +1,8 @@
-- name: Configure Servarr VM (Docker + Servarr docker compose)
-  hosts: servarr
+- name: Prepare shared storage and provision native Servarr LXCs
+  hosts: proxmox
   gather_facts: true
 
   vars_prompt:
-    - name: media_disk
-      prompt: "Enter the target media disk device to format and mount (e.g., /dev/sdb)"
-      private: false
-      default: "/dev/sdb"
     - name: servarr_ui_password
       prompt: "Enter the password for the Servarr UI user"
       private: true
@@ -39,7 +35,31 @@
       default: "10"
 
   roles:
-    - role: docker
+    - role: proxmox_lxc
+
+- name: Install native applications in the Servarr LXCs
+  hosts: servarr_lxcs
+  gather_facts: false
+  # pct executes as root inside the guest; sudo is used only on the PVE host.
+  become: false
+  pre_tasks:
+    - name: Install Python in minimal Debian container templates
+      ansible.builtin.raw: test -x /usr/bin/python3 || (apt-get update && apt-get install -y python3)
+      register: servarr_python
+      changed_when: "'Setting up python3' in servarr_python.stdout"
+
+    - name: Gather guest facts
+      ansible.builtin.setup:
+
+  roles:
     - role: servarr
 
-  # post_tasks:
+- name: Connect and bootstrap the native Servarr services
+  hosts: sabnzbd
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Configure authentication, root folders, provider and integrations
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: bootstrap.yaml

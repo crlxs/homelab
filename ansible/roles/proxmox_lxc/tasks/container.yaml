@@ -1,0 +1,166 @@
+- name: "{{ servarr_ct.name }} | Create the unprivileged LXC through the API"
+  community.proxmox.proxmox:
+    api_host: "{{ proxmox_api_host }}"
+    api_user: "{{ proxmox_api_user }}"
+    api_token_id: "{{ proxmox_api_token_id }}"
+    api_token_secret: "{{ proxmox_api_token_secret }}"
+    validate_certs: "{{ proxmox_validate_certs }}"
+    node: "{{ proxmox_node }}"
+    vmid: "{{ servarr_ct.vmid }}"
+    hostname: "{{ servarr_ct.name }}"
+    ostemplate: "{{ servarr_lxc_template_storage }}:vztmpl/{{ servarr_selected_template }}"
+    disk: "{{ servarr_lxc_storage }}:{{ servarr_ct.disk }}"
+    cores: "{{ servarr_ct.cores }}"
+    memory: "{{ servarr_ct.memory }}"
+    swap: 512
+    netif:
+      net0: "name=eth0,bridge={{ servarr_lxc_bridge }},ip={{ servarr_ct.ip }},gw={{ servarr_lxc_gateway }}"
+    nameserver: "{{ servarr_lxc_nameserver }}"
+    onboot: true
+    unprivileged: true
+    update: false
+    state: present
+    timeout: 600
+  delegate_to: localhost
+  become: false
+
+- name: "{{ servarr_ct.name }} | Read the actual container configuration"
+  ansible.builtin.command:
+    argv: [pvesh, get, "/nodes/{{ proxmox_node }}/lxc/{{ servarr_ct.vmid }}/config", --output-format, json]
+  register: servarr_ct_config_result
+  changed_when: false
+
+- name: "{{ servarr_ct.name }} | Decode the container configuration"
+  ansible.builtin.set_fact:
+    servarr_ct_config: "{{ servarr_ct_config_result.stdout | from_json }}"
+    servarr_ct_mount: "{{ servarr_host_media_dir }},mp={{ media_dir }},backup=0"
+    servarr_ct_idmap: |
+      lxc.idmap: u 0 {{ servarr_lxc_idmap_base }} {{ servarr_uid }}
+      lxc.idmap: u {{ servarr_uid }} {{ servarr_uid }} 1
+      lxc.idmap: u {{ servarr_uid | int + 1 }} {{ servarr_lxc_idmap_base | int + servarr_uid | int + 1 }} {{ 65536 - servarr_uid | int - 1 }}
+      lxc.idmap: g 0 {{ servarr_lxc_idmap_base }} {{ servarr_gid }}
+      lxc.idmap: g {{ servarr_gid }} {{ servarr_gid }} 1
+      lxc.idmap: g {{ servarr_gid | int + 1 }} {{ servarr_lxc_idmap_base | int + servarr_gid | int + 1 }} {{ 65536 - servarr_gid | int - 1 }}
+
+- name: "{{ servarr_ct.name }} | Normalize the existing bind-mount options"
+  ansible.builtin.set_fact:
+    servarr_ct_mount_matches: >-
+      {{ (servarr_ct_config.mp0 | default('') | split(',') | first) == servarr_host_media_dir
+         and ('mp=' ~ media_dir) in (servarr_ct_config.mp0 | default('') | split(','))
+         and 'ro=1' not in (servarr_ct_config.mp0 | default('') | split(',')) }}
+
+- name: "{{ servarr_ct.name }} | Refuse to repurpose an unrelated container"
+  ansible.builtin.assert:
+    that:
+      - servarr_ct_config.hostname == servarr_ct.name
+      - servarr_ct_config.unprivileged | default(0) | int == 1
+      - servarr_ct_config.mp0 is not defined or servarr_ct_mount_matches or not servarr_ct.media
+    fail_msg: This CT ID belongs to another hostname, is privileged, or has a conflicting mp0. Choose another ID.
+
+- name: "{{ servarr_ct.name }} | Read existing UID and GID mappings"
+  ansible.builtin.slurp:
+    src: "/etc/pve/lxc/{{ servarr_ct.vmid }}.conf"
+  register: servarr_ct_config_file
+
+- name: "{{ servarr_ct.name }} | Detect configuration changes"
+  ansible.builtin.set_fact:
+    servarr_ct_mapping_changed: "{{ (servarr_ct_config_file.content | b64decode | split('\n[') | first | regex_findall('(?m)^lxc.idmap: .+$')) != (servarr_ct_idmap | trim | split('\n')) }}"
+    servarr_ct_settings_changed: >-
+      {{ servarr_ct_config.cores | int != servarr_ct.cores | int
+         or servarr_ct_config.memory | int != servarr_ct.memory | int
+         or servarr_ct_config.onboot | default(0) | int != 1
+         or servarr_ct_config.nameserver | default('') != servarr_lxc_nameserver
+         or ('ip=' ~ servarr_ct.ip) not in servarr_ct_config.net0
+         or ('bridge=' ~ servarr_lxc_bridge) not in servarr_ct_config.net0
+         or ('gw=' ~ servarr_lxc_gateway) not in servarr_ct_config.net0
+         or (servarr_ct.media and not servarr_ct_mount_matches) }}
+
+- name: "{{ servarr_ct.name }} | Preserve unrelated custom identity mappings"
+  ansible.builtin.assert:
+    that:
+      - >-
+        not servarr_ct_mapping_changed
+        or 'lxc.idmap:' not in (servarr_ct_config_file.content | b64decode)
+        or '# BEGIN ANSIBLE MEDIA IDMAP' in (servarr_ct_config_file.content | b64decode)
+    fail_msg: This CT has custom UID mappings not managed by this role. Choose a new CT ID.
+
+- name: "{{ servarr_ct.name }} | Preserve snapshot identity mappings"
+  ansible.builtin.assert:
+    that:
+      - not servarr_ct_mapping_changed or (servarr_ct_config_file.content | b64decode | regex_findall('(?m)^\\[') | length == 0)
+    fail_msg: UID/GID mappings cannot be changed while this container has snapshots. Keep its current IDs or use a new CT.
+
+- name: "{{ servarr_ct.name }} | Read container state"
+  ansible.builtin.command:
+    argv: [pct, status, "{{ servarr_ct.vmid | string }}"]
+  register: servarr_ct_status
+  changed_when: false
+
+- name: "{{ servarr_ct.name }} | Stop only when offline configuration must change"
+  ansible.builtin.command:
+    argv: [pct, shutdown, "{{ servarr_ct.vmid | string }}", --timeout, '60']
+  when:
+    - "'running' in servarr_ct_status.stdout"
+    - servarr_ct_mapping_changed or servarr_ct_settings_changed
+  changed_when: true
+
+- name: "{{ servarr_ct.name }} | Remove outdated UID mappings"
+  ansible.builtin.lineinfile:
+    path: "/etc/pve/lxc/{{ servarr_ct.vmid }}.conf"
+    regexp: '^lxc.idmap:'
+    state: absent
+    unsafe_writes: true
+  when: servarr_ct_mapping_changed
+
+- name: "{{ servarr_ct.name }} | Map the media account directly to its host IDs"
+  ansible.builtin.blockinfile:
+    path: "/etc/pve/lxc/{{ servarr_ct.vmid }}.conf"
+    marker: '# {mark} ANSIBLE MEDIA IDMAP'
+    block: "{{ servarr_ct_idmap }}"
+    unsafe_writes: true
+  when: servarr_ct_mapping_changed
+
+# Proxmox restricts bind mounts and custom idmaps to host-root operations;
+# a non-root API token cannot manage them even with Administrator privileges.
+- name: "{{ servarr_ct.name }} | Apply resources, network and host bind mount"
+  ansible.builtin.command:
+    argv: >-
+      {{ ['pct', 'set', servarr_ct.vmid | string,
+          '--cores', servarr_ct.cores | string, '--memory', servarr_ct.memory | string,
+          '--onboot', '1', '--nameserver', servarr_lxc_nameserver,
+          '--net0', 'name=eth0,bridge=' ~ servarr_lxc_bridge ~ ',ip=' ~ servarr_ct.ip ~ ',gw=' ~ servarr_lxc_gateway]
+         + (['--mp0', servarr_ct_mount] if servarr_ct.media else []) }}
+  when: servarr_ct_settings_changed
+  changed_when: true
+
+- name: "{{ servarr_ct.name }} | Start container if stopped"
+  ansible.builtin.command:
+    argv: [pct, start, "{{ servarr_ct.vmid | string }}"]
+  when: "'running' not in servarr_ct_status.stdout or servarr_ct_mapping_changed or servarr_ct_settings_changed"
+  changed_when: true
+
+- name: "{{ servarr_ct.name }} | Wait for the guest network"
+  ansible.builtin.command:
+    argv: [pct, exec, "{{ servarr_ct.vmid | string }}", --, ip, -4, address, show, dev, eth0]
+  register: servarr_ct_network
+  until: (servarr_ct.ip | split('/') | first) in servarr_ct_network.stdout
+  retries: 30
+  delay: 2
+  changed_when: false
+
+- name: "{{ servarr_ct.name }} | Add guest to the in-memory inventory"
+  ansible.builtin.add_host:
+    name: "{{ servarr_ct.name }}"
+    groups: servarr_lxcs
+    ansible_connection: community.proxmox.proxmox_pct_remote
+    ansible_host: "{{ ansible_host }}"
+    ansible_user: "{{ ansible_user }}"
+    ansible_private_key_file: "{{ ansible_private_key_file }}"
+    ansible_become: false
+    ansible_paramiko_pty: false
+    ansible_python_interpreter: /usr/bin/python3
+    proxmox_vmid: "{{ servarr_ct.vmid }}"
+    servarr_ct: "{{ servarr_ct }}"
+    servarr_endpoints: "{{ servarr_endpoints }}"
+    servarr_proxmox_host: "{{ inventory_hostname }}"
+  changed_when: false

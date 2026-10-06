@@ -1,5 +1,7 @@
 servarr_user: media
 servarr_group: media
+servarr_uid: 1500
+servarr_gid: 1500
 servarr_conf_dir: /opt/servarr
 media_dir: /opt/media
 radarr_root_folder: "{{ media_dir }}/movies"
@@ -19,3 +21,23 @@ timezone: Etc/UTC
 servarr_ui_username: admin
 # Provided interactively by playbooks/01-deploy-servarr.yaml.
 servarr_ui_password: ""
+
+servarr_ports:
+  radarr: 7878
+  sonarr: 8989
+  prowlarr: 9696
+  sabnzbd: "{{ sabnzbd_web_port }}"
+  jellyseerr: 5055
+
+# Official stable Linux binaries, downloaded only on first installation.
+# Override a URL and checksum to pin an exact application release.
+servarr_arr_downloads:
+  radarr: https://radarr.servarr.com/v1/update/master/updatefile?os=linux&runtime=netcore&arch=x64
+  # Sonarr's public download endpoint differs from Radarr/Prowlarr's updater.
+  sonarr: https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux&arch=x64
+  prowlarr: https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&runtime=netcore&arch=x64
+servarr_arr_checksums: {}
+
+# Retain the existing Jellyseerr application rather than migrate to Seerr.
+jellyseerr_version: v2.7.3
+jellyseerr_pnpm_version: 9.15.9

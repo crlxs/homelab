@@ -1,0 +1,90 @@
+- name: Install source build prerequisites
+  ansible.builtin.apt:
+    name: [git, build-essential, python3, gpg]
+    state: present
+
+- name: Create APT keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Install NodeSource's repository signing key
+  ansible.builtin.get_url:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    dest: /etc/apt/keyrings/nodesource.asc
+    mode: '0644'
+
+- name: Enable the Node.js 22 repository required by Jellyseerr
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64 signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesource.com/node_22.x nodistro main
+    filename: nodesource
+    state: present
+
+- name: Install Node.js 22 with its bundled npm
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+
+- name: Verify Node.js meets Jellyseerr's release requirements
+  ansible.builtin.command: node --version
+  register: jellyseerr_node
+  changed_when: false
+  failed_when: jellyseerr_node.stdout is not match('^v22\\.')
+
+- name: Read the pnpm version when the build tool is installed
+  ansible.builtin.shell: |
+    if command -v pnpm >/dev/null 2>&1; then
+      pnpm --version
+    fi
+  register: jellyseerr_pnpm
+  changed_when: false
+
+- name: Install the pinned pnpm build tool
+  ansible.builtin.command:
+    argv: [npm, install, --global, "pnpm@{{ jellyseerr_pnpm_version }}"]
+  when: jellyseerr_pnpm.stdout != jellyseerr_pnpm_version
+  changed_when: true
+
+- name: Download the pinned Jellyseerr source
+  ansible.builtin.git:
+    repo: https://github.com/Fallenbagel/jellyseerr.git
+    dest: /opt/jellyseerr
+    version: "{{ jellyseerr_version }}"
+    depth: 1
+    update: false
+  register: jellyseerr_source
+
+- name: Check for a completed Jellyseerr build
+  ansible.builtin.stat:
+    path: /opt/jellyseerr/.next/BUILD_ID
+  register: jellyseerr_build
+
+- name: Install locked Jellyseerr dependencies
+  ansible.builtin.command:
+    argv: [pnpm, install, --frozen-lockfile]
+    chdir: /opt/jellyseerr
+  environment:
+    CYPRESS_INSTALL_BINARY: '0'
+  when: jellyseerr_source.changed or not jellyseerr_build.stat.exists
+  changed_when: true
+
+- name: Build Jellyseerr for production
+  ansible.builtin.command:
+    argv: [pnpm, build]
+    chdir: /opt/jellyseerr
+  environment:
+    NODE_OPTIONS: --max-old-space-size=3072
+    NEXT_TELEMETRY_DISABLED: '1'
+  when: jellyseerr_source.changed or not jellyseerr_build.stat.exists
+  changed_when: true
+  notify: Restart native Servarr application
+
+- name: Give Jellyseerr a writable runtime cache
+  ansible.builtin.file:
+    path: /opt/jellyseerr/.next/cache
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    recurse: true

@@ -1,0 +1,222 @@
+- name: Require a single Proxmox node and complete LXC definitions
+  ansible.builtin.assert:
+    that:
+      - groups['proxmox'] | length == 1
+      - servarr_lxcs | map(attribute='name') | sort == ['jellyseerr', 'prowlarr', 'radarr', 'sabnzbd', 'sonarr']
+      - servarr_lxcs | map(attribute='vmid') | unique | length == servarr_lxcs | length
+      - servarr_lxcs | map(attribute='ip') | unique | length == servarr_lxcs | length
+      - servarr_uid | int > 0 and servarr_uid | int < 65535
+      - servarr_gid | int > 0 and servarr_gid | int < 65535
+      - servarr_lxc_idmap_base | int == 100000
+      - servarr_host_media_dir is match('^/[^,\\s]+$')
+      - media_dir is match('^/[^,\\s]+$')
+      - servarr_host_media_dir not in ['/', '/opt', '/var', '/etc', '/home', '/root']
+    fail_msg: Check the node, unique container IDs/IPs, numeric media IDs and media paths.
+
+- name: Validate LXC networking and resources
+  ansible.builtin.assert:
+    that:
+      - item.vmid | int > 100
+      - item.ip is match('^[0-9.]+/[0-9]+$')
+      - item.cores | int > 0
+      - item.memory | int >= 512
+      - item.disk | int >= 8
+  loop: "{{ servarr_lxcs }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Require bootstrap credentials before creating resources
+  ansible.builtin.assert:
+    that:
+      - proxmox_api_token_secret | length > 0
+      - servarr_ui_password | default('') | length > 0
+      - sabnzbd_provider_host | default('') | length > 0
+      - sabnzbd_provider_username | default('') | length > 0
+      - sabnzbd_provider_password | default('') | length > 0
+      - sabnzbd_provider_port | int > 0 and sabnzbd_provider_port | int <= 65535
+      - sabnzbd_provider_connections | int > 0
+      - sabnzbd_provider_name | length > 0
+      - sabnzbd_ui_username | length > 0
+      - sabnzbd_provider_port | int != 563 or sabnzbd_provider_ssl | default(true) | bool
+  no_log: true
+
+- name: Keep bootstrap credentials in memory for the final play
+  ansible.builtin.set_fact:
+    servarr_bootstrap_values:
+      servarr_ui_password: "{{ servarr_ui_password }}"
+      sabnzbd_ui_username: "{{ sabnzbd_ui_username }}"
+      sabnzbd_ui_password: "{{ servarr_ui_password }}"
+      sabnzbd_provider_name: "{{ sabnzbd_provider_name }}"
+      sabnzbd_provider_host: "{{ sabnzbd_provider_host }}"
+      sabnzbd_provider_port: "{{ sabnzbd_provider_port }}"
+      sabnzbd_provider_username: "{{ sabnzbd_provider_username }}"
+      sabnzbd_provider_password: "{{ sabnzbd_provider_password }}"
+      sabnzbd_provider_connections: "{{ sabnzbd_provider_connections }}"
+  no_log: true
+
+- name: Validate the optional media filesystem identifier
+  ansible.builtin.assert:
+    that:
+      - servarr_media_uuid is match('^[A-Za-z0-9-]*$')
+
+- name: Read the currently mounted media filesystem identifier
+  ansible.builtin.command:
+    argv: [findmnt, --mountpoint, "{{ servarr_host_media_dir }}", --noheadings, --output, UUID]
+  register: servarr_existing_mount
+  changed_when: false
+  failed_when: servarr_existing_mount.rc not in [0, 1]
+  when: servarr_media_uuid | length > 0
+
+- name: Refuse to replace a different mounted media filesystem
+  ansible.builtin.assert:
+    that:
+      - servarr_existing_mount.rc == 1 or servarr_existing_mount.stdout | trim == servarr_media_uuid
+    fail_msg: The media mountpoint contains a different filesystem than servarr_media_uuid.
+  when: servarr_media_uuid | length > 0
+
+- name: Mount the existing media filesystem and persist it on PVE
+  ansible.posix.mount:
+    path: "{{ servarr_host_media_dir }}"
+    src: "UUID={{ servarr_media_uuid }}"
+    fstype: "{{ servarr_media_fstype }}"
+    opts: defaults
+    state: mounted
+  when: servarr_media_uuid | length > 0
+
+- name: Verify that media storage is mounted on the Proxmox host
+  ansible.builtin.command:
+    argv: [findmnt, --mountpoint, "{{ servarr_host_media_dir }}", --noheadings, --output, SOURCE]
+  changed_when: false
+
+- name: Read existing host media accounts
+  ansible.builtin.getent:
+    database: "{{ item.database }}"
+    key: "{{ item.key }}"
+    fail_key: false
+  loop:
+    - database: passwd
+      key: "{{ servarr_user }}"
+    - database: group
+      key: "{{ servarr_group }}"
+
+- name: Refuse to renumber existing host media accounts
+  ansible.builtin.assert:
+    that:
+      - getent_passwd[servarr_user] == none or getent_passwd[servarr_user][1] | int == servarr_uid | int
+      - getent_group[servarr_group] == none or getent_group[servarr_group][1] | int == servarr_gid | int
+    fail_msg: Set servarr_uid/servarr_gid to the existing media account IDs before continuing.
+
+- name: Create shared host media group
+  ansible.builtin.group:
+    name: "{{ servarr_group }}"
+    gid: "{{ servarr_gid }}"
+
+- name: Create shared host media user
+  ansible.builtin.user:
+    name: "{{ servarr_user }}"
+    uid: "{{ servarr_uid }}"
+    group: "{{ servarr_group }}"
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Prepare the host media and download directories
+  ansible.builtin.file:
+    path: "{{ servarr_host_media_dir }}{{ item }}"
+    state: directory
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: '2775'
+  loop: ['', /movies, /tv, /downloads, /downloads/incomplete, /downloads/complete, /downloads/complete/radarr, /downloads/complete/sonarr, /downloads/complete/prowlarr]
+
+- name: Read the media and download filesystem identities
+  ansible.builtin.stat:
+    path: "{{ servarr_host_media_dir }}{{ item }}"
+    follow: false
+  loop: ['', /movies, /tv, /downloads/incomplete, /downloads/complete]
+  register: servarr_media_paths
+
+- name: Require real directories on one filesystem for atomic imports
+  ansible.builtin.assert:
+    that:
+      - not item.stat.islnk
+      - item.stat.isdir
+      - item.stat.dev == servarr_media_paths.results[0].stat.dev
+    fail_msg: Media and downloads must be real directories on the same host filesystem.
+  loop: "{{ servarr_media_paths.results }}"
+  loop_control:
+    label: "{{ item.stat.path }}"
+
+- name: Repair existing media ownership when explicitly requested
+  ansible.builtin.file:
+    path: "{{ servarr_host_media_dir }}"
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    recurse: true
+  when: servarr_media_repair_ownership | bool
+
+- name: Allow root to map the shared host account into unprivileged containers
+  ansible.builtin.lineinfile:
+    path: "{{ item.path }}"
+    line: "root:{{ item.id }}:1"
+    create: true
+    mode: '0644'
+  loop:
+    - path: /etc/subuid
+      id: "{{ servarr_uid }}"
+    - path: /etc/subgid
+      id: "{{ servarr_gid }}"
+
+- name: Verify the standard subordinate ranges are available
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    line: "root:{{ servarr_lxc_idmap_base }}:65536"
+    create: true
+    mode: '0644'
+  loop: [/etc/subuid, /etc/subgid]
+
+- name: Refresh the Proxmox container template catalog
+  ansible.builtin.command: pveam update
+  changed_when: false
+  when: servarr_lxc_template | length == 0
+
+- name: List Debian templates
+  ansible.builtin.command: pveam available --section system
+  register: servarr_template_catalog
+  changed_when: false
+  when: servarr_lxc_template | length == 0
+
+- name: Select the current Debian 13 amd64 template
+  ansible.builtin.set_fact:
+    servarr_selected_template: "{{ servarr_lxc_template if servarr_lxc_template | length > 0 else (servarr_template_catalog.stdout | regex_findall('debian-13-standard_[^\\s]+_amd64.tar.zst') | sort | last | default('')) }}"
+
+- name: Require a Debian 13 template
+  ansible.builtin.assert:
+    that:
+      - servarr_selected_template is match('^debian-13-standard_[^/]+_amd64.tar.zst$')
+    fail_msg: Set servarr_lxc_template to a Debian 13 amd64 filename listed by pveam available.
+
+- name: List templates already downloaded
+  ansible.builtin.command:
+    argv: [pveam, list, "{{ servarr_lxc_template_storage }}"]
+  register: servarr_downloaded_templates
+  changed_when: false
+
+- name: Download the Debian template only when absent
+  ansible.builtin.command:
+    argv: [pveam, download, "{{ servarr_lxc_template_storage }}", "{{ servarr_selected_template }}"]
+  when: servarr_selected_template not in servarr_downloaded_templates.stdout
+  changed_when: true
+
+- name: Build reachable service addresses
+  ansible.builtin.set_fact:
+    servarr_endpoints: "{{ servarr_endpoints | default({}) | combine({item.name: item.ip | split('/') | first}) }}"
+  loop: "{{ servarr_lxcs }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Provision and configure each native application container
+  ansible.builtin.include_tasks: container.yaml
+  loop: "{{ servarr_lxcs }}"
+  loop_control:
+    loop_var: servarr_ct
+    label: "{{ servarr_ct.name }}"

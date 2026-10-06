@@ -1,0 +1,9 @@
+# First-run seed only. Subsequent settings are managed through SABnzbd's API.
+[misc]
+host = 0.0.0.0
+port = {{ sabnzbd_web_port }}
+api_key = {{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_lowercase', 'digits']) }}
+host_whitelist = localhost,
+download_dir = {{ sabnzbd_incomplete_dir }}
+complete_dir = {{ sabnzbd_complete_dir }}
+permissions = 775

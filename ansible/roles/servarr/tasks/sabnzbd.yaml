@@ -1,0 +1,39 @@
+- name: Install GPG required by Ansible's APT repository module
+  ansible.builtin.apt:
+    name: gpg
+    state: present
+
+- name: Enable Debian stable contrib and non-free for download tools
+  ansible.builtin.apt_repository:
+    repo: deb http://deb.debian.org/debian trixie contrib non-free
+    filename: servarr-tools
+    state: present
+
+- name: Enable Debian backports for a supported SABnzbd version
+  ansible.builtin.apt_repository:
+    repo: deb http://deb.debian.org/debian trixie-backports main contrib non-free
+    filename: servarr-backports
+    state: present
+
+- name: Install SABnzbd and unpacking tools
+  ansible.builtin.apt:
+    name: [sabnzbdplus, unrar, par2, 7zip]
+    default_release: trixie-backports
+    state: present
+    update_cache: true
+
+- name: Disable the distribution launcher in favor of the media-owned unit
+  ansible.builtin.systemd_service:
+    name: sabnzbdplus
+    enabled: false
+    state: stopped
+
+- name: Seed first-run listener and API key without overwriting existing configuration
+  ansible.builtin.template:
+    src: sabnzbd.ini.j2
+    dest: "{{ sabnzbd_conf_dir }}/sabnzbd.ini"
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+    mode: '0600'
+    force: false
+  no_log: true

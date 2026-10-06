@@ -3,3 +3,13 @@
 # User baked into the golden image and used by Ansible over SSH on guest VMs.
 ansible_user: ansible
 ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/ansible' }}"
+
+# Shared numeric IDs are mapped identically inside every unprivileged LXC.
+# Change these before deployment if 1500 is already assigned on the host.
+servarr_user: media
+servarr_group: media
+servarr_uid: 1500
+servarr_gid: 1500
+servarr_host_media_dir: /opt/media
+media_dir: /opt/media
+timezone: Etc/UTC

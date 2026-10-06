@@ -1,0 +1,28 @@
+- name: Install native Servarr runtime dependencies
+  ansible.builtin.apt:
+    name: [libicu76, libsqlite3-0, sqlite3]
+    state: present
+
+- name: Check whether the application is already installed
+  ansible.builtin.stat:
+    path: "/opt/{{ servarr_ct.name | capitalize }}/{{ servarr_ct.name | capitalize }}"
+  register: servarr_binary
+
+- name: Download the official Linux application archive
+  ansible.builtin.get_url:
+    url: "{{ servarr_arr_downloads[servarr_ct.name] }}"
+    dest: "/var/cache/{{ servarr_ct.name }}.tar.gz"
+    checksum: "{{ servarr_arr_checksums[servarr_ct.name] | default(omit) }}"
+    mode: '0644'
+    timeout: 120
+  when: not servarr_binary.stat.exists
+
+- name: Extract the official archive
+  ansible.builtin.unarchive:
+    src: "/var/cache/{{ servarr_ct.name }}.tar.gz"
+    dest: /opt
+    remote_src: true
+    owner: "{{ servarr_user }}"
+    group: "{{ servarr_group }}"
+  when: not servarr_binary.stat.exists
+  notify: Restart native Servarr application

@@ -1,6 +1,37 @@
 # Ansible setup for homelab provisioning on Proxmox
 
-VMs are provisioned with a **golden image** approach: a Debian 13 template is
+Servarr now runs as native systemd services in five unprivileged Debian 13
+LXCs: Radarr, Sonarr, Prowlarr, SABnzbd and Jellyseerr. Their lifecycle is
+created through the Proxmox API; host-only configuration uses SSH, and guest
+tasks use `community.proxmox.proxmox_pct_remote` through the same host SSH
+connection. No guest SSH service, Docker nesting or NFS is required.
+
+Media storage must be mounted at `/opt/media` **on the Proxmox host**; either
+mount it beforehand or configure `servarr_media_uuid` for an existing filesystem.
+The playbook creates `movies`, `tv` and `downloads/{incomplete,complete}` there
+and bind-mounts the whole tree into Radarr, Sonarr and SABnzbd at `/opt/media`.
+All applications run as `media`, with UID/GID 1500 mapped directly to the host
+account. See [the Servarr deployment guide](roles/servarr/README.md) for the
+configuration, migration steps and backup considerations.
+
+```sh
+ansible-galaxy collection install -r requirements.yaml
+sudo apt update
+sudo apt install python3-proxmoxer python3-requests python3-paramiko
+export PROXMOX_TOKEN_SECRET='...'
+ansible-playbook playbooks/01-deploy-servarr.yaml
+```
+
+Check the LXC IDs/IPs/storage in `inventory/group_vars/proxmox.yaml` and media
+IDs/path in `inventory/group_vars/all.yaml` before running. The complete
+playbook provisions, installs, starts and connects the applications. It asks
+for one shared UI password and the Usenet provider credentials, without
+writing a separate plaintext password file. Per-LXC Prometheus node exporters
+on port 9100 replace the Docker-specific cAdvisor service.
+
+The old Servarr VM is not deleted or stopped automatically. `proxmox_vms` is
+empty by default on this branch; VM provisioning remains available for other
+workloads. VMs are provisioned with a **golden image** approach: a Debian 13 template is
 created manually on the Proxmox node (with users, SSH keys and base packages
 baked in), and Ansible only clones it, applies per-VM configuration
 (resources, network via cloud-init) and starts the VMs.
@@ -17,10 +48,13 @@ ansible/
 │       ├── all.yaml                  # shared vars (ansible user, SSH key)
 │       └── proxmox.yaml              # Proxmox API settings + VM definitions
 ├── playbooks/
-│   └── 00-provision-vms.yaml         # clone VMs from the golden image
+│   ├── 00-provision-vms.yaml          # clone unrelated VMs from the golden image
+│   └── 01-deploy-servarr.yaml         # provision + configure the native LXCs
 └── roles/
     ├── proxmox_vm/                   # clone template, configure, start VMs
-    └── docker/                       # install Docker engine on Debian guests
+    ├── proxmox_lxc/                  # prepare media, provision and map LXCs
+    ├── servarr/                      # native apps + API bootstrap
+    └── docker/                       # optional Docker role for other guests
 ```
 
 ## Golden image prerequisites

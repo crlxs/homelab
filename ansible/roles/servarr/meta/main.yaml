@@ -1,3 +1,0 @@
-# Docker role must be run on target machine before servarr can be installed
-dependencies:
-  - role: docker

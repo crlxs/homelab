@@ -1,0 +1,11 @@
+servarr_lxc_idmap_base: 100000
+servarr_lxc_template_storage: local
+servarr_lxc_storage: local-lvm
+servarr_lxc_template: ""
+servarr_lxc_bridge: vmbr0
+servarr_lxc_gateway: 192.168.1.1
+servarr_lxc_nameserver: 192.168.1.1
+# Explicit opt-in for existing files; large media libraries can take a while.
+servarr_media_repair_ownership: false
+servarr_media_uuid: ""
+servarr_media_fstype: ext4

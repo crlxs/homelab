@@ -1,0 +1,48 @@
+- name: Validate bootstrap settings
+  ansible.builtin.assert:
+    that:
+      - sabnzbd_provider_ssl | bool or hostvars[servarr_proxmox_host].servarr_bootstrap_values.sabnzbd_provider_port | int != 563
+      - hostvars['radarr'].servarr_api_key | length > 0
+      - hostvars['sonarr'].servarr_api_key | length > 0
+      - hostvars['prowlarr'].servarr_api_key | length > 0
+  no_log: true
+
+- name: Read the SABnzbd API key in memory
+  ansible.builtin.slurp:
+    src: "{{ sabnzbd_conf_dir }}/sabnzbd.ini"
+  register: sabnzbd_config
+  no_log: true
+
+- name: Parse and validate SABnzbd's generated API key
+  ansible.builtin.include_tasks: sabnzbd-api-key.yaml
+
+- name: Install the native Servarr bootstrap script on the SABnzbd LXC
+  ansible.builtin.template:
+    src: bootstrap-servarr.sh.j2
+    dest: "{{ servarr_conf_dir }}/bootstrap-servarr.sh"
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Bootstrap authentication, provider, paths and cross-LXC integrations
+  ansible.builtin.command:
+    argv: [/bin/sh, "{{ servarr_conf_dir }}/bootstrap-servarr.sh"]
+    stdin: >-
+      {{ hostvars[servarr_proxmox_host].servarr_bootstrap_values | combine({
+        'radarr_api_key': hostvars['radarr'].servarr_api_key,
+        'sonarr_api_key': hostvars['sonarr'].servarr_api_key,
+        'prowlarr_api_key': hostvars['prowlarr'].servarr_api_key,
+        'sabnzbd_api_key': sabnzbd_api_key,
+        'sabnzbd_incomplete_dir': sabnzbd_incomplete_dir,
+        'sabnzbd_complete_dir': sabnzbd_complete_dir,
+        'sabnzbd_radarr_category': sabnzbd_radarr_category,
+        'sabnzbd_sonarr_category': sabnzbd_sonarr_category,
+        'sabnzbd_prowlarr_category': sabnzbd_prowlarr_category,
+        'sabnzbd_provider_ssl': sabnzbd_provider_ssl | bool,
+        'sabnzbd_provider_ssl_verify': sabnzbd_provider_ssl_verify | int,
+        'sabnzbd_provider_priority': sabnzbd_provider_priority | int
+      }) | to_json }}
+    stdin_add_newline: true
+  register: servarr_bootstrap_result
+  changed_when: "'CHANGED' in servarr_bootstrap_result.stdout"
+  no_log: true
