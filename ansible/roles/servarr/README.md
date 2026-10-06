@@ -198,6 +198,18 @@ key on every run. A stale connection is repaired with the current source key;
 no plaintext key cache is created. Empty optional fields and schema metadata
 returned by the APIs do not cause spurious updates.
 
+SABnzbd providers are matched by hostname and username, not just their label.
+The hostname comparison ignores case and a trailing DNS dot. The bootstrap
+reuses an existing matching entry and preserves its name/password/custom fields;
+the declared SSL, port and connection settings still apply. When several entries
+share that account, the configured name is preferred, otherwise an enabled entry
+is preferred with a stable name-order tie-break. Other matching entries are
+disabled before enabling the selected one, without deleting their settings.
+Different hosts/accounts remain untouched. If no matching account exists,
+creation refuses a configured name belonging to an unrelated account; choose
+a unique `sabnzbd_provider_name`.
+This repairs duplicate entries such as `eweka` and `primary` on the next run.
+
 The Jellyfin bootstrap creates its initial administrator using the shared UI
 password (override `jellyfin_admin_username`/`jellyfin_admin_password` in the
 private file if desired), completes its wizard, adds Movies/TV Shows libraries,

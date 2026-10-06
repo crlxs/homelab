@@ -219,6 +219,49 @@ sabnzbd_set_entry() {
   changed=1
 }
 
+sabnzbd_set_provider() {
+  provider_desired="$1"
+  provider_servers="$(sabnzbd_request '{"mode":"get_config","section":"servers"}')"
+  if ! printf '%s' "$provider_servers" | jq -e '
+    .status != false and (.config.servers | type == "array") and
+    (.config.servers | all(.[]; (.name | type == "string") and (.name | length > 0)))' >/dev/null; then
+    printf 'Invalid SABnzbd server-list response; refusing to create a provider\n' >&2
+    exit 1
+  fi
+  # Account identity is independent of the label, port and SSL settings.
+  # Hostnames are case-insensitive; usernames must match exactly.
+  provider_account_matches="$(printf '%s' "$provider_servers" | jq -c --argjson desired "$provider_desired" '
+    def hostname: ascii_downcase | rtrimstr(".");
+    [.config.servers[] | select(
+      ((.host // "") | hostname) == ($desired.host | hostname) and
+      (.username // "") == $desired.username)] |
+    sort_by([if .name == $desired.name then 0 else 1 end,
+             if (.enable | tostring) == "1" or (.enable | tostring) == "true" then 0 else 1 end,
+             .name])')"
+  provider_selected="$(printf '%s' "$provider_account_matches" | jq -r '.[0].name // empty')"
+  if [ -z "$provider_selected" ]; then
+    # A name collision must not repurpose another account or retain its password.
+    if printf '%s' "$provider_servers" | jq -e --argjson desired "$provider_desired" \
+      'any(.config.servers[]; .name == $desired.name)' >/dev/null; then
+      printf 'Configured SABnzbd provider name belongs to a different host/account; choose a unique sabnzbd_provider_name\n' >&2
+      exit 1
+    fi
+    sabnzbd_set_entry servers "$provider_desired"
+    return
+  fi
+  # Disable redundant entries before enabling/updating the selected account.
+  # Keep their configuration for recovery, including saved (masked) passwords.
+  provider_duplicates="$(printf '%s' "$provider_account_matches" | jq -c '.[1:] |
+    map(select((.enable | tostring) == "1" or (.enable | tostring) == "true"))')"
+  while [ "$(printf '%s' "$provider_duplicates" | jq 'length')" -gt 0 ]; do
+    provider_disabled="$(printf '%s' "$provider_duplicates" | jq -c '.[0] | {name: .name, enable: 0}')"
+    sabnzbd_set_entry servers "$provider_disabled"
+    provider_duplicates="$(printf '%s' "$provider_duplicates" | jq -c '.[1:]')"
+  done
+  provider_desired="$(printf '%s' "$provider_desired" | jq --arg name "$provider_selected" '.name = $name')"
+  sabnzbd_set_entry servers "$provider_desired"
+}
+
 wait_for_url "$RADARR_URL/ping"
 wait_for_url "$SONARR_URL/ping"
 wait_for_url "$PROWLARR_URL/ping"
@@ -245,7 +288,7 @@ provider="$(printf '%s' "$bootstrap_input" | jq '{
   password: .sabnzbd_provider_password, connections: (.sabnzbd_provider_connections | tonumber),
   ssl: (if .sabnzbd_provider_ssl then 1 else 0 end), ssl_verify: .sabnzbd_provider_ssl_verify,
   priority: .sabnzbd_provider_priority, enable: 1}')"
-sabnzbd_set_entry servers "$provider"
+sabnzbd_set_provider "$provider"
 current="$(sabnzbd_request '{"mode":"get_config","section":"misc","keyword":"username"}')"
 if [ -z "$(printf '%s' "$current" | jq -r '.config.misc.username // empty')" ]; then
   # Set password first, so a partial failure does not leave a username-only account.

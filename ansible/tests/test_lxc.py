@@ -62,8 +62,12 @@ class FakeAPI(BaseHTTPRequestHandler):
             section, keyword = query["section"], query.get("keyword")
             config = state["config"]
             if query["mode"] == "get_config":
+                if section == "servers" and state.get("reject_server_listing"):
+                    return self.reply({"status": False, "error": "Config is locked"})
                 if section == "misc":
                     result = {keyword: config[section].get(keyword, "")}
+                elif keyword is None:
+                    result = copy.deepcopy(list(config[section].values()))
                 else:
                     result = [copy.deepcopy(config[section][keyword])] if keyword in config[section] else []
                 if isinstance(result, list):
@@ -299,6 +303,115 @@ class BootstrapTests(unittest.TestCase):
         self.servers["sonarr"].state["downloadclient"].append(custom.copy())
         self.run_bootstrap()
         self.assertEqual(self.servers["sonarr"].state["downloadclient"], [custom])
+
+    def test_reuse_differently_named_provider_and_preserve_credentials(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        existing = servers.pop("primary")
+        existing.update({"name": "Eweka main server", "host": "NEWS.EXAMPLE.TEST.",
+                         "password": "user-changed-password", "timeout": "120"})
+        servers[existing["name"]] = existing
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "CHANGED")
+        self.assertEqual(set(servers), {"Eweka main server"})
+        self.assertEqual(existing["host"], "news.example.test")
+        self.assertEqual(existing["password"], "user-changed-password")
+        self.assertEqual(existing["timeout"], "120")
+        writes = len(self.servers["sabnzbd"].state["writes"])
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+        self.assertEqual(writes, len(self.servers["sabnzbd"].state["writes"]))
+
+    def test_disable_duplicate_account_entries_without_deleting_settings(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        duplicate = copy.deepcopy(servers["primary"])
+        duplicate.update({"name": "Eweka duplicate", "port": "119", "ssl": "0",
+                          "password": "keep-this-password", "timeout": "120"})
+        servers[duplicate["name"]] = duplicate
+        disabled = copy.deepcopy(duplicate)
+        disabled.update({"name": "Already disabled", "enable": "0"})
+        servers[disabled["name"]] = disabled
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "CHANGED")
+        self.assertEqual(servers["primary"]["enable"], "1")
+        self.assertEqual(duplicate["enable"], "0")
+        self.assertEqual(duplicate["password"], "keep-this-password")
+        self.assertEqual(duplicate["timeout"], "120")
+        self.assertEqual(duplicate["port"], "119")
+        self.assertEqual(len(servers), 3)
+        writes = self.servers["sabnzbd"].state["writes"]
+        self.assertEqual(writes[-1]["name"], "Eweka duplicate")
+        self.assertNotIn("password", writes[-1])
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+
+    def test_prefer_enabled_match_when_configured_name_is_absent(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        enabled = servers.pop("primary")
+        enabled["name"] = "Zulu active"
+        servers[enabled["name"]] = enabled
+        disabled = copy.deepcopy(enabled)
+        disabled.update({"name": "Alpha disabled", "enable": "0"})
+        servers[disabled["name"]] = disabled
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+        self.assertEqual(enabled["enable"], "1")
+        self.assertEqual(disabled["enable"], "0")
+        self.assertNotIn("primary", servers)
+
+    def test_duplicate_selection_is_stable_without_the_configured_name(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        first = servers.pop("primary")
+        first["name"] = "Zulu provider"
+        second = copy.deepcopy(first)
+        second["name"] = "Alpha provider"
+        servers[first["name"]] = first
+        servers[second["name"]] = second
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "CHANGED")
+        self.assertEqual(first["enable"], "0")
+        self.assertEqual(second["enable"], "1")
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+
+    def test_existing_match_can_be_reused_without_touching_a_name_collision(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        existing = servers.pop("primary")
+        existing["name"] = "Existing provider"
+        servers[existing["name"]] = existing
+        unrelated = copy.deepcopy(existing)
+        unrelated.update({"name": "primary", "host": "another.example.test", "password": "keep-me"})
+        servers["primary"] = unrelated
+        before = copy.deepcopy(servers)
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+        self.assertEqual(servers, before)
+
+    def test_provider_matching_does_not_disable_other_hosts_or_accounts(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        other_host = copy.deepcopy(servers["primary"])
+        other_host.update({"name": "Other provider", "host": "other.example.test"})
+        other_user = copy.deepcopy(servers["primary"])
+        other_user.update({"name": "Other account", "username": "another-user"})
+        servers[other_host["name"]] = other_host
+        servers[other_user["name"]] = other_user
+        before = copy.deepcopy(servers)
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
+        self.assertEqual(servers, before)
+
+    def test_provider_name_collision_does_not_repurpose_another_account(self):
+        self.run_bootstrap()
+        servers = self.servers["sabnzbd"].state["config"]["servers"]
+        servers["primary"]["username"] = "another-user"
+        before = copy.deepcopy(servers)
+        result = self.run_bootstrap(success=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("different host/account", result.stderr)
+        self.assertEqual(servers, before)
+
+    def test_failed_provider_listing_does_not_create_or_modify_servers(self):
+        self.servers["sabnzbd"].state["reject_server_listing"] = True
+        result = self.run_bootstrap(success=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Invalid SABnzbd server-list response", result.stderr)
+        self.assertEqual(self.servers["sabnzbd"].state["config"]["servers"], {})
 
     def test_sab_semantic_api_failure_stops_bootstrap(self):
         self.servers["sabnzbd"].state["reject_writes"] = True
