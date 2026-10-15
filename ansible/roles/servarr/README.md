@@ -1,9 +1,10 @@
 # Native Servarr deployment
 
 Run `ansible-playbook playbooks/01-deploy-servarr.yaml` from the Ansible root.
-All three plays are required: provision on PVE, configure each LXC, then run
-the API bootstrap from SABnzbd. Inventory is created in memory during the
-first play. Avoid `--limit sabnzbd`, which would skip that prerequisite.
+The ordered plays provision on PVE, configure each Servarr LXC, run the API
+bootstrap from SABnzbd, then provision and configure Homarr. Inventory is
+created in memory during these stages. Avoid `--limit sabnzbd`, which would
+skip prerequisites and later Homarr stages.
 
 The API creates containers through `community.proxmox.proxmox`. Host SSH
 configures bind mounts and subordinate IDs because those are root operations

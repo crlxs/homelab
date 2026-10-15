@@ -62,4 +62,39 @@
         tasks_from: jellyfin-bootstrap.yaml
 
 - name: Deploy the homelab dashboard
-  ansible.builtin.import_playbook: 02-deploy-homarr.yaml
+  hosts: proxmox
+  gather_facts: true
+  pre_tasks:
+    - name: Load shared Servarr defaults for dashboard provisioning
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: noop.yaml
+        public: true
+  tasks:
+    - name: Provision the dashboard and collect existing monitoring credentials
+      ansible.builtin.include_role:
+        name: homarr
+        tasks_from: provision.yaml
+        public: true
+
+- name: Install and configure the native Homarr dashboard
+  hosts: homarr_lxcs
+  gather_facts: false
+  become: false
+  pre_tasks:
+    - name: Install Python in the minimal Debian guest
+      ansible.builtin.raw: test -x /usr/bin/python3 || (apt-get update && apt-get install -y python3)
+      register: homarr_python
+      changed_when: "'Setting up python3' in homarr_python.stdout"
+
+    - name: Gather guest facts
+      ansible.builtin.setup:
+
+    - name: Load shared Servarr defaults
+      ansible.builtin.include_role:
+        name: servarr
+        tasks_from: noop.yaml
+        public: true
+
+  roles:
+    - role: homarr

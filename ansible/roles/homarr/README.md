@@ -30,13 +30,14 @@ integrations are configured.
 
 ## Deploy
 
-The full `01-deploy-servarr.yaml` playbook includes Homarr after Servarr bootstrap.
-For an existing stack, deploy the dashboard independently:
+Homarr is provisioned and configured as the final stage of the full stack
+deployment. Run from the Ansible root:
 
 ```sh
-cd ansible
-ansible-playbook playbooks/02-deploy-homarr.yaml
+ansible-playbook playbooks/01-deploy-servarr.yaml
 ```
+
+Reruns reconcile the full stack and preserve user-managed application settings.
 
 Defaults in `inventory/group_vars/proxmox.yaml` allocate CT **127**, IP
 **192.168.1.207/24**, 2 cores, 2 GiB RAM and a 12 GiB root disk on `local-lvm`.
@@ -89,7 +90,7 @@ Dashboard status: `curl http://192.168.1.207:7575/api/health/ready`.
 ## Validation
 
 ```sh
-ANSIBLE_LOCAL_TEMP=/tmp/ansible-local ansible-playbook --syntax-check playbooks/02-deploy-homarr.yaml
+ANSIBLE_LOCAL_TEMP=/tmp/ansible-local ansible-playbook --syntax-check playbooks/01-deploy-servarr.yaml
 ANSIBLE_LOCAL_TEMP=/tmp/ansible-local ansible-playbook tests/render-homarr.yaml
 python3 -m unittest discover -s tests -v
 git diff --check
