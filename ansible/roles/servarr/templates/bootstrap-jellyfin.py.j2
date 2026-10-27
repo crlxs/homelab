@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """One-shot native API bootstrap. Credentials stay in stdin and memory only."""
 import json
+from copy import deepcopy
 import sys
 import time
 from urllib.error import HTTPError, URLError
@@ -15,6 +16,7 @@ TRANSCODE_PATH = {{ jellyfin_transcode_dir | to_json }}
 NVIDIA_ENABLED = {{ (jellyfin_nvidia_enabled | bool) | ternary('True', 'False') }}
 DECODING_CODECS = {{ jellyfin_nvidia_decoding_codecs | to_json }}
 ADMIN_EMAIL = {{ jellyseerr_admin_email | to_json }}
+PREFERRED_PROFILE_NAME = {{ servarr_preferred_quality_profile_name | to_json }}
 ARR_SERVICES = {{ [
   {'name': 'Radarr', 'app': 'radarr', 'host': servarr_endpoints.radarr, 'port': servarr_ports.radarr,
    'root': radarr_root_folder, 'profile': jellyseerr_radarr_quality_profile_name},
@@ -42,6 +44,41 @@ class API:
             raise RuntimeError(f"{path.split('?')[0]} returned HTTP {error.code}") from None
         except (URLError, TimeoutError):
             raise RuntimeError(f"{path.split('?')[0]} is unreachable") from None
+
+
+def preferred_quality_profile(profiles, name):
+    existing = next((profile for profile in profiles if profile["name"] == name), None)
+    if existing:
+        return existing, False
+    if name != PREFERRED_PROFILE_NAME:
+        raise RuntimeError(f"Quality profile {name} does not exist; set the matching jellyseerr quality profile name")
+    source = next((profile for profile in profiles if profile["name"] == "Any"), None)
+    if not source:
+        raise RuntimeError("The Any quality profile is required to create the preferred fallback profile")
+    profile = deepcopy(source)
+    profile.pop("id", None)
+    profile["name"] = name
+    profile["upgradeAllowed"] = True
+    # The API lists qualities from least to most preferred. Put every 1080p
+    # source above 720p, while still permitting other resolutions as fallbacks.
+    def resolution(item):
+        qualities = item.get("items") or [item]
+        return max((quality.get("quality") or {}).get("resolution", 0) for quality in qualities)
+
+    def rank(item):
+        pixels = resolution(item)
+        return 3 if pixels == 1080 else 2 if pixels == 720 else 1 if pixels >= 2160 else 0
+
+    profile["items"].sort(key=rank)
+    for item in profile["items"]:
+        item["allowed"] = (item.get("quality") or {}).get("id") != 0
+        for child in item.get("items", []):
+            child["allowed"] = True
+    profile["cutoff"] = next(
+        item["quality"]["id"] for item in profile["items"]
+        if (item.get("quality") or {}).get("name") == "HDTV-1080p"
+    )  # Stop upgrading once any 1080p source is present.
+    return profile, True
 
 
 def bootstrap(credentials):
@@ -150,9 +187,10 @@ def bootstrap(credentials):
             "X-Api-Key": credentials[service["app"] + "_api_key"]
         })
         profiles = arr.request("/api/v3/qualityprofile")
-        profile = next((p for p in profiles if p["name"] == service["profile"]), None)
-        if profile is None:
-            raise RuntimeError(f'{service["name"]} does not have the configured quality profile; set jellyseerr_{service["app"]}_quality_profile_name')
+        profile, create_profile = preferred_quality_profile(profiles, service["profile"])
+        if create_profile:
+            profile = arr.request("/api/v3/qualityprofile", profile)
+            changed = True
         payload = {
             "name": service["name"], "hostname": service["host"], "port": service["port"],
             "apiKey": credentials[service["app"] + "_api_key"], "useSsl": False,

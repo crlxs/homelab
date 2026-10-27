@@ -53,8 +53,9 @@ jellyfin_server_name: Homelab
 jellyfin_admin_username: admin
 jellyfin_admin_password: "{{ servarr_ui_password }}"
 jellyseerr_admin_email: admin@homelab.local
-jellyseerr_radarr_quality_profile_name: HD-1080p
-jellyseerr_sonarr_quality_profile_name: HD-1080p
+servarr_preferred_quality_profile_name: 1080p preferred with fallbacks
+jellyseerr_radarr_quality_profile_name: "{{ servarr_preferred_quality_profile_name }}"
+jellyseerr_sonarr_quality_profile_name: "{{ servarr_preferred_quality_profile_name }}"
 nzbgeek_indexer_name: NZBGeek
 nzbgeek_base_url: https://api.nzbgeek.info
 # First-run hardware decoding defaults; override for a different NVIDIA GPU.

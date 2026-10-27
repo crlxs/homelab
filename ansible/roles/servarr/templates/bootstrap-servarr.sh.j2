@@ -223,11 +223,15 @@ sabnzbd_set_provider() {
   provider_desired="$1"
   provider_servers="$(sabnzbd_request '{"mode":"get_config","section":"servers"}')"
   if ! printf '%s' "$provider_servers" | jq -e '
-    .status != false and (.config.servers | type == "array") and
-    (.config.servers | all(.[]; (.name | type == "string") and (.name | length > 0)))' >/dev/null; then
+    .status != false and (.config | type == "object") and
+    (.config == {} or
+      ((.config | keys) == ["servers"] and (.config.servers | type == "array") and
+       (.config.servers | all(.[]; (.name | type == "string") and (.name | length > 0)))))' >/dev/null; then
     printf 'Invalid SABnzbd server-list response; refusing to create a provider\n' >&2
     exit 1
   fi
+  # A new SABnzbd instance omits the section entirely until its first server.
+  provider_servers="$(printf '%s' "$provider_servers" | jq -c '.config.servers //= []')"
   # Account identity is independent of the label, port and SSL settings.
   # Hostnames are case-insensitive; usernames must match exactly.
   provider_account_matches="$(printf '%s' "$provider_servers" | jq -c --argjson desired "$provider_desired" '

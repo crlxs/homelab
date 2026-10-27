@@ -5,13 +5,13 @@
       - hostvars['radarr'].servarr_api_key | length > 0
       - hostvars['sonarr'].servarr_api_key | length > 0
       - hostvars['prowlarr'].servarr_api_key | length > 0
-  no_log: true
+  # no_log: true
 
 - name: Read the SABnzbd API key in memory
   ansible.builtin.slurp:
     src: "{{ sabnzbd_conf_dir }}/sabnzbd.ini"
   register: sabnzbd_config
-  no_log: true
+  # no_log: true
 
 - name: Parse and validate SABnzbd's generated API key
   ansible.builtin.include_tasks: sabnzbd-api-key.yaml
@@ -45,4 +45,4 @@
     stdin_add_newline: true
   register: servarr_bootstrap_result
   changed_when: "'CHANGED' in servarr_bootstrap_result.stdout"
-  no_log: true
+  # no_log: true

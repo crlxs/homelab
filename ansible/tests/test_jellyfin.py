@@ -19,7 +19,9 @@ class JellyfinTests(unittest.TestCase):
             sonarr_root_folder="/opt/media/tv", jellyfin_transcode_dir="/opt/media/transcodes/jellyfin",
             jellyfin_nvidia_enabled=True, jellyfin_nvidia_decoding_codecs=["h264", "hevc"],
             jellyseerr_admin_email="admin@example.test",
-            jellyseerr_radarr_quality_profile_name="HD-1080p", jellyseerr_sonarr_quality_profile_name="HD-1080p",
+            servarr_preferred_quality_profile_name="1080p preferred with fallbacks",
+            jellyseerr_radarr_quality_profile_name="1080p preferred with fallbacks",
+            jellyseerr_sonarr_quality_profile_name="1080p preferred with fallbacks",
         )
         self.module = {"__name__": "fixture"}
         exec(compile(script, "bootstrap-jellyfin.py", "exec"), self.module)
@@ -33,6 +35,20 @@ class JellyfinTests(unittest.TestCase):
         self.settings = {"ip": "", "apiKey": "", "libraries": []}
         self.writes = []
         self.services = {"radarr": [], "sonarr": []}
+        self.profiles = {app: [{
+            "id": 1, "name": "Any", "upgradeAllowed": False, "cutoff": 1,
+            "items": [
+                {"quality": {"id": 0, "name": "Unknown", "resolution": 0}, "allowed": False},
+                {"quality": {"id": 1, "name": "SDTV", "resolution": 480}, "allowed": True},
+                {"quality": {"id": 4, "name": "HDTV-720p", "resolution": 720}, "allowed": True},
+                {"id": 1001, "name": "WEB 720p", "quality": None, "allowed": False,
+                 "items": [{"quality": {"id": 5, "name": "WEBDL-720p", "resolution": 720},
+                            "allowed": False}]},
+                {"quality": {"id": 9, "name": "HDTV-1080p", "resolution": 1080}, "allowed": True},
+                {"quality": {"id": 20, "name": "Remux-1080p", "resolution": 1080}, "allowed": False},
+                {"quality": {"id": 16, "name": "HDTV-2160p", "resolution": 2160}, "allowed": False},
+            ],
+        }, {"id": 4, "name": "HD-1080p"}] for app in ("radarr", "sonarr")}
         self.first_user = {"Name": "root"}
         fixture = self
 
@@ -89,7 +105,12 @@ class JellyfinTests(unittest.TestCase):
                 if path == "/api/v1/settings/jellyfin/users":
                     return [{"id": "admin-id", "username": "admin"}]
                 if path == "/api/v3/qualityprofile":
-                    return [{"id": 1, "name": "Any"}, {"id": 4, "name": "HD-1080p"}]
+                    app = "radarr" if ":7878" in self.base else "sonarr"
+                    if data is not None:
+                        profile = {**copy.deepcopy(data), "id": 5}
+                        fixture.profiles[app].append(profile)
+                        return profile
+                    return fixture.profiles[app]
                 if path in ("/api/v1/settings/radarr", "/api/v1/settings/sonarr"):
                     app = path.rsplit("/", 1)[1]
                     if data is not None:
@@ -106,8 +127,17 @@ class JellyfinTests(unittest.TestCase):
         self.assertEqual(self.encoding["TranscodingTempPath"], "/opt/media/transcodes/jellyfin")
         self.assertEqual(len(self.folders), 2)
         for app in ["radarr", "sonarr"]:
-            self.assertEqual(self.services[app][0]["activeProfileName"], "HD-1080p")
-            self.assertEqual(self.services[app][0]["activeProfileId"], 4)
+            self.assertEqual(self.services[app][0]["activeProfileName"], "1080p preferred with fallbacks")
+            self.assertEqual(self.services[app][0]["activeProfileId"], 5)
+            profile = self.profiles[app][-1]
+            self.assertTrue(profile["upgradeAllowed"])
+            self.assertEqual(profile["cutoff"], 9)
+            self.assertEqual([item["quality"]["resolution"] if item.get("quality") else
+                              item["items"][0]["quality"]["resolution"] for item in profile["items"]],
+                             [0, 480, 2160, 720, 720, 1080, 1080])
+            self.assertEqual([item["allowed"] for item in profile["items"]],
+                             [False, True, True, True, True, True, True])
+            self.assertTrue(next(item for item in profile["items"] if item.get("id") == 1001)["items"][0]["allowed"])
         count = len(self.writes)
         self.assertFalse(self.module["bootstrap"](self.credentials))
         self.assertEqual(len(self.writes), count)

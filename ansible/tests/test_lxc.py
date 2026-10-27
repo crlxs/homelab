@@ -64,6 +64,8 @@ class FakeAPI(BaseHTTPRequestHandler):
             if query["mode"] == "get_config":
                 if section == "servers" and state.get("reject_server_listing"):
                     return self.reply({"status": False, "error": "Config is locked"})
+                if section == "servers" and not config["servers"] and state.get("omit_empty_server_section"):
+                    return self.reply({"config": {}})
                 if section == "misc":
                     result = {keyword: config[section].get(keyword, "")}
                 elif keyword is None:
@@ -223,6 +225,12 @@ class BootstrapTests(unittest.TestCase):
         writes = sum(len(s.state["writes"]) for s in self.servers.values())
         self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
         self.assertEqual(writes, sum(len(s.state["writes"]) for s in self.servers.values()))
+
+    def test_first_provider_when_sab_omits_empty_servers_section(self):
+        self.servers["sabnzbd"].state["omit_empty_server_section"] = True
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "CHANGED")
+        self.assertEqual(set(self.servers["sabnzbd"].state["config"]["servers"]), {"primary"})
+        self.assertEqual(self.run_bootstrap().stdout.strip(), "OK")
 
     def test_indexer_key_rotation_preserves_custom_fields(self):
         self.run_bootstrap()

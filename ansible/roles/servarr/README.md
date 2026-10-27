@@ -218,8 +218,11 @@ sets the transcoding directory and enables NVENC. It creates Jellyseerr's initia
 Jellyfin administrator and server API token, enables those libraries and completes
 the connection wizard. Sign into Jellyseerr using the Jellyfin login option and
 that account. When no existing service settings are present, Radarr and Sonarr
-are added as default request services using their `HD-1080p` quality profiles
-and `movies`/`tv` roots. Override `jellyseerr_radarr_quality_profile_name` and
+are added as default request services using a dedicated `1080p preferred with fallbacks`
+quality profile and `movies`/`tv` roots. It accepts 1080p first, 720p next and
+other recognized qualities as fallbacks, then permits upgrades until 1080p is
+reached. Existing quality profiles are left untouched. Override
+`jellyseerr_radarr_quality_profile_name` and
 `jellyseerr_sonarr_quality_profile_name` for another first-run choice. Existing
 Jellyseerr service/quality choices are never replaced on reruns.
 

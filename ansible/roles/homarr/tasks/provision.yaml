@@ -13,13 +13,28 @@
       - homarr_proxmox_username is match('^[a-z][a-z0-9-]+$')
       - homarr_proxmox_token_id is match('^[a-z][a-z0-9-]+$')
 
-- name: Validate credentials before creating resources
+- name: Require a Homarr administrator username of at least three characters
+  ansible.builtin.assert:
+    that: homarr_admin_username | length >= 3
+    fail_msg: Set homarr_admin_username to at least three characters in private vars.
+    quiet: true
+
+- name: Require a Homarr administrator password of at least eight characters
+  ansible.builtin.assert:
+    that: homarr_admin_password | length >= 8
+    fail_msg: Set homarr_admin_password to at least eight characters in private vars; it defaults to servarr_ui_password.
+    quiet: true
+
+- name: Require a Jellyfin administrator password for dashboard setup
+  ansible.builtin.assert:
+    that: jellyfin_admin_password | length > 0
+    fail_msg: Set jellyfin_admin_password in private vars or provide servarr_ui_password for its default.
+    quiet: true
+
+- name: Validate the provisioning token before creating resources
   ansible.builtin.assert:
     that:
       - proxmox_api_token_secret | length > 0
-      - homarr_admin_username | length >= 3
-      - homarr_admin_password | length >= 8
-      - jellyfin_admin_password | length > 0
   no_log: true
 
 - name: Check whether the dashboard CT ID is already allocated
